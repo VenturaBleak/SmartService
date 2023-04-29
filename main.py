@@ -89,17 +89,17 @@ def main():
     model.to(DEVICE)
 
     # MLP with BatchNorm
-    from model import MLPWithBatchNorm
-    NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 300
-    model = MLPWithBatchNorm(
-        input_size=INPUT_SIZE,
-        output_size=OUTPUT_SIZE,
-        num_hidden_layers=NUM_HIDDEN_LAYERS,
-        nodes_per_layer=NODES_PER_LAYER,
-        dropout_rate=0.05
-    )
-    model.to(DEVICE)
+    # from model import MLPWithBatchNorm
+    # NUM_HIDDEN_LAYERS = 8
+    # NODES_PER_LAYER = 300
+    # model = MLPWithBatchNorm(
+    #     input_size=INPUT_SIZE,
+    #     output_size=OUTPUT_SIZE,
+    #     num_hidden_layers=NUM_HIDDEN_LAYERS,
+    #     nodes_per_layer=NODES_PER_LAYER,
+    #     dropout_rate=0.05
+    # )
+    # model.to(DEVICE)
 
     # Halfing model
     # from model import HalfingModel

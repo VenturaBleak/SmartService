@@ -31,13 +31,14 @@ data = pd.DataFrame({
 window_size = 2
 X, y, grouped_data = prepare_time_series_data(data, window_size)
 
-processed_data = pd.DataFrame(columns=['Location ID', 'Target (t+1)', 'Feature 1 (t)', 'Feature 2 (t-1)', 'Population', 'Avg Income'])
+processed_data = pd.DataFrame(columns=['Location ID', 'Timestamp (t+1)', 'Target (t+1)', 'Target (t)', 'Target (t-1)', 'Population', 'Avg Income'])
 
 idx = 0
 for loc_id, group in grouped_data:
     for i in range(group.shape[0] - window_size):
+        timestamp = group.iloc[i + window_size]['Timestamp']
         extra_features = group.iloc[i + window_size - 1][['Population', 'Avg Income']].values
-        processed_data.loc[idx] = [loc_id, y[idx], X[idx][0], X[idx][1], *extra_features]
+        processed_data.loc[idx] = [loc_id, timestamp, y[idx], X[idx][0], X[idx][1], *extra_features]
         idx += 1
 
 # Print the processed data
