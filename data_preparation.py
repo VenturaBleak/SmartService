@@ -1,9 +1,10 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.impute import KNNImputer
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, RobustScaler
 
 def prepare_data(pytorch=True):
+    # specify coluns and parameters
     RANDOM_STATE = 42
     FILE_NAME = "data_charger_energy_EVs_cleaned.csv"
     TARGET_COL = "total_capacity"
@@ -40,6 +41,7 @@ def prepare_data(pytorch=True):
     # impute missing values
     imputer = KNNImputer(n_neighbors=5)
     scaler = MinMaxScaler(feature_range=(-1, 1))
+    # scaler = RobustScaler()
 
     if pytorch:
         # scale the data
