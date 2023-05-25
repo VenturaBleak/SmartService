@@ -30,8 +30,7 @@ def prepare_time_series_data(data, observation_period, forecasting_period, locat
         # Add the windows to our lists
         X.extend(X_group)
         y.extend(y_group)
-
-    return np.array(X), np.array(y), grouped_data
+    return np.array(X), np.array(y), grouped_data.groups.keys(), grouped_data
 
 if __name__ == '__main__':
     TRY = False
@@ -84,15 +83,23 @@ if __name__ == '__main__':
             # drop every column except the target column, the time column and the location column
             data = data.drop([col for col in data.columns if col not in  [TARGET_COLUMN, TIME_COLUMN, LOCATION_COLUMN]], axis=1)
 
-        # Prepare the data
-        X, y, grouped_data = prepare_time_series_data(data, OBSERVATION_PERIOD, FORECASTING_PERIOD, LOCATION_COLUMN,
-                                                      TIME_COLUMN, TARGET_COLUMN)
 
+        if counter +1 == len(TARGET_COLUMNS):
+            if TRY != True:
+                # free up memory
+                del data_df
+
+        # Prepare the data
+        X, y, loc_ids, grouped_data = prepare_time_series_data(data, OBSERVATION_PERIOD, FORECASTING_PERIOD,
+                                                               LOCATION_COLUMN,
+                                                               TIME_COLUMN, TARGET_COLUMN)
         print('time series data prepared')
 
         # fetch feature names, that is all columns except the target column and the time column and the location column
         feature_names = [col for col in data.columns if col not in TARGET_COLUMNS + [TIME_COLUMN, LOCATION_COLUMN]]
 
+        # free up memory
+        del data
 
         # Generate dynamic column names based on the window size
         column_names = [
@@ -103,20 +110,20 @@ if __name__ == '__main__':
         processed_data_temp = pd.DataFrame(columns=column_names)
 
         idx = 0
+        processed_data_list = []
         # Loop over each group
-        for loc_id, group in grouped_data:
-            # Loop over each data point in the group
-            for i in range(group.shape[0] - OBSERVATION_PERIOD - FORECASTING_PERIOD + 1):
-                # Extract the timestamp for t-0
-                timestamp = group.iloc[i + OBSERVATION_PERIOD - 1][TIME_COLUMN]
-                # Extract the other features for the last data point in the window
-                extra_features = group.iloc[i + OBSERVATION_PERIOD - 1][feature_names].values
-                # Add the data to our processed data DataFrame
-                processed_data_temp.loc[idx] = [loc_id, timestamp] + list(y[idx][::-1]) + list(X[idx]) + list(
-                    extra_features)
-                idx += 1
+        for loc_id in loc_ids:
+            group = grouped_data.get_group(loc_id)
+            timestamps = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][TIME_COLUMN].values
+            extra_features = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][feature_names].values
+            group_data = [[loc_id, timestamps[i]] + list(y[i][::-1]) + list(X[i]) + list(extra_features[i])
+                          for i in range(len(timestamps))]
+            processed_data_list.extend(group_data)
 
-        # Add the processed data to our dictionary
+        # Initialize a DataFrame with the data list
+        processed_data_temp = pd.DataFrame(processed_data_list, columns=column_names)
+
+        # Add the processed data to the dictionary
         processed_data_dict[TARGET_COLUMN] = processed_data_temp
 
     # Print the processed data
@@ -128,10 +135,9 @@ if __name__ == '__main__':
     # remove duplicate columns
     processed_data = processed_data.loc[:, ~processed_data.columns.duplicated()]
 
-    print(data)
-    print(processed_data)
+    if TRY == True:
+        print(data)
+        print(processed_data)
 
-    # save the data to a csv file
-    # load cleaned data
     # save to new csv file named original name + _cleaned
     processed_data.to_csv(filename.split('.')[0] + '_processed.csv', index=False)
