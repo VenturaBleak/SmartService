@@ -33,7 +33,7 @@ def prepare_time_series_data(data, observation_period, forecasting_period, locat
     return np.array(X), np.array(y), grouped_data.groups.keys(), grouped_data
 
 if __name__ == '__main__':
-    TRY = False
+    TRY = True
 
     if TRY == True:
         filename = "test.csv"
@@ -136,7 +136,7 @@ if __name__ == '__main__':
     processed_data = processed_data.loc[:, ~processed_data.columns.duplicated()]
 
     if TRY == True:
-        print(data)
+        print(data_df)
         print(processed_data)
 
     # save to new csv file named original name + _cleaned
