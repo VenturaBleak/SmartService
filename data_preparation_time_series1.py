@@ -152,18 +152,18 @@ if __name__ == '__main__':
             group = grouped_data.get_group(loc_id)
             timestamps = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][TIME_COLUMN].values
             extra_features = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][feature_names].values
-            print(f"extra features:\n {extra_features}")
+            # print(f"extra features:\n {extra_features}")
 
             # Loop over the remaining timestamps in the group
             for i in range(len(timestamps)):
                 try:
                     row = dict(zip(column_names[0], [loc_id, timestamps[i]] + list(forecast_arrays[counts][::-1]) + list(
                         observation_arrays[counts]) + list(extra_features[i])))
-                    print(f"extra features [i]: {extra_features[i]}")
+                    # print(f"extra features [i]: {extra_features[i]}")
                 except:
                     row = dict(zip(column_names[0], [loc_id, timestamps[i]] + list(forecast_arrays[counts][::-1]) + list(
                         observation_arrays[counts]) + list(extra_features[0])))
-                    print(f"extra features [0]: {extra_features[0]}")
+                    # print(f"extra features [0]: {extra_features[0]}")
                 data_rows[counts] = row
                 counts +=1
 
@@ -190,6 +190,14 @@ if __name__ == '__main__':
         print(processed_data)
 
     print(f"saving processed data...")
+
+    # save two files, one for training and one for testing; keep as everything with date >= 01-01-2023 for testing, rest for training
+    processed_data_train = processed_data[processed_data['Date'] < '2023-01-01']
+    processed_data_test = processed_data[processed_data['Date'] >= '2023-01-01']
+
     # save to new csv file named original name + _cleaned
-    processed_data.to_csv(filename.split('.')[0] + '_processed.csv', index=False)
+    processed_data.to_csv(filename[:-4] + '_processed.csv', index=False)
+    processed_data_train.to_csv(filename[:-4] + '_processed_train.csv', index=False)
+    processed_data_test.to_csv(filename[:-4] + '_processed_test.csv', index=False)
+
     print(f"Sucess! processed data saved to {filename.split('.')[0] + '_processed.csv'}")

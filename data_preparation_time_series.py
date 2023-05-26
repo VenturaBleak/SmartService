@@ -158,5 +158,14 @@ if __name__ == '__main__':
         print(data_df)
         print(processed_data)
 
+    # sort by date, PC6
+    processed_data = processed_data.sort_values(by=['Date', 'PC6'])
+
+    # save two files, one for training and one for testing; keep as everything with date >= 01-01-2023 for testing, rest for training
+    processed_data_train = processed_data[processed_data['Date'] < '2023-01-01']
+    processed_data_test = processed_data[processed_data['Date'] >= '2023-01-01']
+
     # save to new csv file named original name + _cleaned
-    processed_data.to_csv(filename.split('.')[0] + '_processed.csv', index=False)
+    processed_data.to_csv(filename[:-4] + '_processed.csv', index=False)
+    processed_data_train.to_csv(filename[:-4] + '_processed_train.csv', index=False)
+    processed_data_test.to_csv(filename[:-4] + '_processed_test.csv', index=False)
