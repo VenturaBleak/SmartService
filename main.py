@@ -11,8 +11,8 @@ def main():
     RANDOM_SEED = 42
     LEARNING_RATE = 5e-5 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 64
-    NUM_EPOCHS = 1000
+    BATCH_SIZE = 1024
+    NUM_EPOCHS = 100
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
@@ -200,7 +200,7 @@ def main():
              "test_mae": [mae]})
         metrics_df = pd.concat([metrics_df, data], ignore_index=True)
 
-        if epoch % 10 == 0:
+        if epoch % 5 == 0:
             # print training loss and test metrics:
             print(
                 f"Epoch: {epoch}, Train Loss: {format(train_loss, ',.2f')}, Test Loss:{format(test_loss, ',.2f')}, Test RMSE: {format(rmse, ',.2f')}, LR: {optimizer.param_groups[0]['lr']:.6f}")

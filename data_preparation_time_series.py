@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 
 # Function to create sliding windows for the time series data
 def create_sliding_window(data, observation_period, forecasting_period):
@@ -61,19 +62,21 @@ if __name__ == '__main__':
         TARGET_COLUMNS = ['kwh', 'MaxPower', 'blocked_kwh']
         LOCATION_COLUMN = 'PC6'
         TIME_COLUMN = 'Date'
-        OBSERVATION_PERIOD = 3
+        OBSERVATION_PERIOD = 6
         FORECASTING_PERIOD = 3
 
     else:
         # load csv file named processed_data.csv
-        filename = 'final_data_SE_cleaned.csv'
+        filename = 'final_data_cleaned.csv'
+        print(f"loading dataset {filename}...")
         data_df = pd.read_csv(filename)
+        print(f"dataset {filename} loaded")
 
         # Define parameters for the time series data
-        TARGET_COLUMNS = ['MaxPower', 'kWh', 'Blocked_kWh', 'WeekIndex']
+        TARGET_COLUMNS = ['MaxPower', 'kWh', 'Blocked_kWh', "number_of_chargers", "WeekIndex", "CosWeekOfYear", "SinWeekOfYear", "CosMonthOfYear", "SinMonthOfYear"]
         LOCATION_COLUMN = 'PC6'
         TIME_COLUMN = 'Date'
-        OBSERVATION_PERIOD = 4
+        OBSERVATION_PERIOD = 8
         FORECASTING_PERIOD = 4
 
     # initialize pd df
@@ -92,8 +95,9 @@ if __name__ == '__main__':
 
 
         if counter +1 == len(TARGET_COLUMNS):
-            # free up memory
-            del data_df
+            if TRY != True:
+                # free up memory
+                del data_df
 
         # Prepare the data
         observation_arrays, forecast_arrays, loc_ids, grouped_data = prepare_time_series_data(data, OBSERVATION_PERIOD, FORECASTING_PERIOD,
@@ -122,20 +126,46 @@ if __name__ == '__main__':
         print(f"looping over loc_ids: {len(loc_ids)}")
         # In the loop over each group
         data_rows = []  # List to hold the data rows
-        for loc_id in loc_ids:
+
+
+        if counter == 0:
+            print(f"obtaining row count...")
+            row_count = 0
+            # count once to instantiate list with predefined number of rows
+            for loc_id in tqdm(loc_ids, desc="Processing Location IDs"):
+                group = grouped_data.get_group(loc_id)
+                timestamps = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][TIME_COLUMN].values
+
+                # Loop over the remaining timestamps in the group
+                for i in range(len(timestamps)):
+                    row_count +=1
+
+            print(f"row count: {row_count}")
+
+
+        # instantiate empty list of length = row count in order to avoid appending to list, for performance reasons
+        data_rows = [None] * row_count
+
+        counts = 0
+        # count once to instantiate list with predefined number of rows
+        for loc_id in tqdm(loc_ids, desc="Processing Location IDs"):
             group = grouped_data.get_group(loc_id)
             timestamps = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][TIME_COLUMN].values
             extra_features = group.iloc[OBSERVATION_PERIOD - 1:-FORECASTING_PERIOD][feature_names].values
+            # print(f"extra features:\n {extra_features}")
 
             # Loop over the remaining timestamps in the group
             for i in range(len(timestamps)):
-                row = dict(zip(column_names[0], [loc_id, timestamps[i]] + list(forecast_arrays[0][::-1]) + list(
-                    observation_arrays[0]) + list(extra_features[0])))
-                data_rows.append(row)
-
-                observation_arrays = np.delete(observation_arrays, 0, 0)
-                forecast_arrays = np.delete(forecast_arrays, 0, 0)
-                extra_features = np.delete(extra_features, 0, 0)
+                try:
+                    row = dict(zip(column_names[0], [loc_id, timestamps[i]] + list(forecast_arrays[counts][::-1]) + list(
+                        observation_arrays[counts]) + list(extra_features[i])))
+                    # print(f"extra features [i]: {extra_features[i]}")
+                except:
+                    row = dict(zip(column_names[0], [loc_id, timestamps[i]] + list(forecast_arrays[counts][::-1]) + list(
+                        observation_arrays[counts]) + list(extra_features[0])))
+                    # print(f"extra features [0]: {extra_features[0]}")
+                data_rows[counts] = row
+                counts +=1
 
         # Create DataFrame from list of dictionaries
         processed_data_temp = pd.DataFrame(data_rows)
@@ -150,6 +180,7 @@ if __name__ == '__main__':
 
     # merge the dataframes that are stored in the dictionary
     processed_data = pd.concat(processed_data_dict.values(), axis=1)
+    del processed_data_dict
 
     # remove duplicate columns
     processed_data = processed_data.loc[:, ~processed_data.columns.duplicated()]
@@ -158,14 +189,14 @@ if __name__ == '__main__':
         print(data_df)
         print(processed_data)
 
-    # sort by date, PC6
-    processed_data = processed_data.sort_values(by=['Date', 'PC6'])
+    print(f"saving processed data...")
 
-    # save two files, one for training and one for testing; keep as everything with date >= 01-01-2023 for testing, rest for training
-    processed_data_train = processed_data[processed_data['Date'] < '2023-01-01']
-    processed_data_test = processed_data[processed_data['Date'] >= '2023-01-01']
 
     # save to new csv file named original name + _cleaned
     processed_data.to_csv(filename[:-4] + '_processed.csv', index=False)
-    processed_data_train.to_csv(filename[:-4] + '_processed_train.csv', index=False)
-    processed_data_test.to_csv(filename[:-4] + '_processed_test.csv', index=False)
+
+    # save two files, one for training and one for testing; keep as everything with date >= 01-01-2023 for testing, rest for training
+    processed_data[processed_data['Date'] < '2023-01-01'].to_csv(filename[:-4] + '_processed_train.csv', index=False)
+    processed_data[processed_data['Date'] >= '2023-01-01'].to_csv(filename[:-4] + '_processed_test.csv', index=False)
+
+    print(f"Success! processed data saved to {filename.split('.')[0] + '_processed.csv'}")
