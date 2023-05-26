@@ -1,6 +1,8 @@
 import torch
 import pandas as pd
 import os
+import random
+import numpy as np
 
 def main():
     ############################
@@ -9,30 +11,35 @@ def main():
     RANDOM_SEED = 42
     LEARNING_RATE = 5e-5 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 4
-    NUM_EPOCHS = 5000
+    BATCH_SIZE = 64
+    NUM_EPOCHS = 1000
     if DEVICE == "cuda":
-        NUM_WORKERS = 4
+        NUM_WORKERS = 2
     else:
         NUM_WORKERS = 0
     PIN_MEMORY = True
-    LSTM = False
+    WARMUP_EPOCHS = int(NUM_EPOCHS * 0.05) # 5% of the total epochs
 
+    ############################
+    # set seeds
+    ############################
+    random.seed(RANDOM_SEED)
+    np.random.seed(RANDOM_SEED)
+    torch.cuda.manual_seed(RANDOM_SEED)
+    torch.manual_seed(RANDOM_SEED)
+    torch.backends.cudnn.deterministic = False
+
+
+    ###################################################################################################################
+    #### Specify Training, and Test Datasets
+    ###################################################################################################################
     # fetch data
     from data_preparation import prepare_data
-    X_train, X_test, y_train, y_test, _ = prepare_data()
+    X_train, X_test, y_train, y_test, _ = prepare_data(pytorch=True)
 
     # convert y_train and y_test to numpy arrays
     y_train = y_train.to_numpy()
     y_test = y_test.to_numpy()
-
-    # prepare data for LSTM
-    from dataset import create_lookback_dataset
-    if LSTM:
-        LOOKBACK = 7
-        X_train, y_train = create_lookback_dataset(X_train, y_train, LOOKBACK)
-        X_test, y_test = create_lookback_dataset(X_test, y_test, LOOKBACK)
-        print(f"Tensors reshaped for LSTM, new shape is: {X_train.shape, X_test.shape, y_train.shape, y_test.shape}")
 
     # specify input and output sizes
     INPUT_SIZE = X_train.shape[-1]
@@ -50,7 +57,7 @@ def main():
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=BATCH_SIZE,
-        shuffle=True,
+        shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         drop_last=True
@@ -73,28 +80,43 @@ def main():
     ############################
     # create model
     ############################
-    # instantiate model
-    from model import FullyConnectedModel
-    NUM_HIDDEN_LAYERS = 10
+    # FC model
+    from model import MLP
+    NUM_HIDDEN_LAYERS = 8
     NODES_PER_LAYER = 300
 
-    model = FullyConnectedModel(
+    model = MLP(
         input_size=INPUT_SIZE,
         output_size=OUTPUT_SIZE,
         num_hidden_layers=NUM_HIDDEN_LAYERS,
         nodes_per_layer=NODES_PER_LAYER,
-        dropout_rate=0.1
+        dropout_rate=0.05
     )
     model.to(DEVICE)
 
-    # LSTM
-    if LSTM:
-        from model import LSTM1
-        model = LSTM1(input_size=INPUT_SIZE,
-                      hidden_size=4,
-                      num_stacked_layers=1,
-                      device=DEVICE)
-        model.to(DEVICE)
+    # MLP with BatchNorm
+    # from model import MLPWithBatchNorm
+    # NUM_HIDDEN_LAYERS = 8
+    # NODES_PER_LAYER = 300
+    # model = MLPWithBatchNorm(
+    #     input_size=INPUT_SIZE,
+    #     output_size=OUTPUT_SIZE,
+    #     num_hidden_layers=NUM_HIDDEN_LAYERS,
+    #     nodes_per_layer=NODES_PER_LAYER,
+    #     dropout_rate=0.05
+    # )
+    # model.to(DEVICE)
+
+    # Halfing model
+    # from model import HalfingModel
+    # model = HalfingModel(
+    #     input_size=INPUT_SIZE,
+    #     output_size=OUTPUT_SIZE,
+    #     factor=20,
+    #     num_blocks=3,
+    #     dropout_rate=0
+    # )
+    # model.to(DEVICE)
 
     ############################
     # Loss, optimizer, scheduler
@@ -106,20 +128,43 @@ def main():
 
     # optimizer -> Adam
     from torch import optim
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-6)
+    # optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
+    optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-2)
 
     # scheduler -> cosine annealing with warm restarts
     from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
     scheduler = CosineAnnealingWarmRestarts(
         optimizer,
-        T_0=int(NUM_EPOCHS*len(train_data_loader)*0.05),
+        T_0=int(NUM_EPOCHS*len(train_data_loader)*0.03),
         T_mult=2,
         eta_min=LEARNING_RATE * 1e-4,
     )
 
+    # scheduler -> Polynomial learning rate scheduler
+    # scheduler visualized: https://www.researchgate.net/publication/224312922/figure/fig1/AS:668980725440524@1536508842675/Plot-of-Q-1-of-our-upper-bound-B1-as-a-function-of-the-decay-rate-g-for-both.png
+    from schedulers import PolynomialLRDecay
+    MAX_ITER = int(len(train_data_loader) * NUM_EPOCHS - (len(train_data_loader) * WARMUP_EPOCHS))
+    print('Polynomial learning rate scheduler - MAX_Iter (number of iterations until decay):', MAX_ITER)
+    POLY_POWER = 1.3  # specify the power of the polynomial, 1.0 means linear decay, and 2.0 means quadratic decay
+    scheduler = PolynomialLRDecay(optimizer=optimizer,
+                                  max_decay_steps=MAX_ITER,  # when to stop decay
+                                  end_learning_rate=LEARNING_RATE * 1e-3,
+                                  power=POLY_POWER)
+
+
+    # GradualWarmupScheduler
+    from schedulers import GradualWarmupScheduler
+    WARMUP_EPOCHS = int(NUM_EPOCHS*len(train_data_loader)*0.03)
+    scheduler = GradualWarmupScheduler(optimizer,
+                                       multiplier=1,
+                                       total_epoch=WARMUP_EPOCHS, # when to stop warmup
+                                       after_scheduler=scheduler,
+                                       is_batch = True)
+
     # print model summary using torchsummary
     from torchinfo import summary
-    summary(model, input_size=(INPUT_SIZE,), device=DEVICE)
+    tensor_shape = (BATCH_SIZE, INPUT_SIZE)
+    summary(model, input_size=tensor_shape, device=DEVICE)  # Update the input_size to (BATCH_SIZE, INPUT_SIZE)
 
     # print
     print(f"Device: {DEVICE}")
@@ -147,7 +192,7 @@ def main():
         test_loss, mse, rmse, mae = eval_fn(test_data_loader, model, loss_fn, DEVICE)
 
         # Update the progress bar with the current epoch loss
-        progress_bar.set_postfix({"train_loss": f"{train_loss:.4f}"})
+        progress_bar.set_postfix({"train_loss": f"{format(train_loss, ',.2f')}"})
 
         # log metrics
         data = pd.DataFrame(
@@ -158,7 +203,7 @@ def main():
         if epoch % 10 == 0:
             # print training loss and test metrics:
             print(
-                f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Test Loss:{test_loss:.4f}, Test RMSE: {rmse:.2f}, Test MAE: {mae:.2f}, LR: {optimizer.param_groups[0]['lr']:.6f}")
+                f"Epoch: {epoch}, Train Loss: {format(train_loss, ',.2f')}, Test Loss:{format(test_loss, ',.2f')}, Test RMSE: {format(rmse, ',.2f')}, LR: {optimizer.param_groups[0]['lr']:.6f}")
 
             # Save metrics DataFrame to a CSV file
             cwd = os.getcwd()

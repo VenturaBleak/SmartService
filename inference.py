@@ -1,23 +1,26 @@
 import torch
 import os
 import random
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import seaborn as sns
 from torch.utils.data import DataLoader
 from dataset import CustomDataset
-from model import FullyConnectedModel
 from train import eval_fn
 from utils import load_checkpoint
 
 def main():
     # Set the model parameters
     RANDOM_SEED = 42
-    NUM_HIDDEN_LAYERS = 4
-    NODES_PER_LAYER = 10
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    TARGET_COL = 'total_capacity'
-    MASTER_KEY = 'zipcode'
+    BATCH_SIZE = 64
+    if DEVICE == "cuda":
+        NUM_WORKERS = 2
+    else:
+        NUM_WORKERS = 0
+    PIN_MEMORY = True
 
     ############################
     # set seeds
@@ -28,48 +31,62 @@ def main():
     torch.manual_seed(RANDOM_SEED)
     torch.backends.cudnn.deterministic = False
 
-    ############################
-    # Load data
-    ############################
-    # Load data as in the main script
-    df = pd.read_csv('charger_df_cleaned.csv')
-    y = df[TARGET_COL]
-    X = df.drop([TARGET_COL], axis=1)
-    X_test, y_test = X, y
+    ###################################################################################################################
+    #### Specify Training, and Test Datasets
+    ###################################################################################################################
+    # fetch data
+    from data_preparation import prepare_data
+    X_test, _, y_test, _, _, filename = prepare_data(pytorch=True, testing=True)
+
+    # convert y_train and y_test to numpy arrays
+    y_test = y_test.to_numpy()
 
     # specify input and output sizes
-    INPUT_SIZE = X_test.shape[1] - 1
+    INPUT_SIZE = X_test.shape[-1]
     OUTPUT_SIZE = 1
 
     ############################
     # Create data loaders
     ############################
-    # Create the test_data_loader without dropping the MASTER_KEY column
-    test_dataset = CustomDataset(X_test.drop([MASTER_KEY], axis=1), y_test)
+    # create testing data loader
+    test_dataset = CustomDataset(X_test, y_test)
     test_data_loader = DataLoader(
         dataset=test_dataset,
-        batch_size=1,
+        batch_size=BATCH_SIZE,
         shuffle=False,
+        num_workers=NUM_WORKERS,
+        pin_memory=PIN_MEMORY,
+        drop_last=False
     )
 
     ############################
     # Load model
     ############################
+    # FC model
+    from model import MLP
+    NUM_HIDDEN_LAYERS = 8
+    NODES_PER_LAYER = 300
     MODEL_NAME = "best_model"
-    NUM_HIDDEN_LAYERS = 4
-    NODES_PER_LAYER = 10
 
-    model = FullyConnectedModel(
+    model = MLP(
         input_size=INPUT_SIZE,
         output_size=OUTPUT_SIZE,
         num_hidden_layers=NUM_HIDDEN_LAYERS,
-        nodes_per_layer=NODES_PER_LAYER
+        nodes_per_layer=NODES_PER_LAYER,
+        dropout_rate=0.05
     )
     model.to(DEVICE)
     model, _ = load_checkpoint(MODEL_NAME, model)
 
-    # Evaluate the model
+    ############################
+    # Loss function
+    ############################
     loss_fn = torch.nn.MSELoss(reduction='mean')
+
+    ############################
+    # Evaluate model
+    ############################
+
     test_loss, mse, rmse, mae = eval_fn(test_data_loader, model, loss_fn, DEVICE)
 
     print(f"Test Loss: {test_loss:.4f}, Test MSE: {mse:.2f}, Test RMSE: {rmse:.2f}, Test MAE: {mae:.2f}")
@@ -77,28 +94,78 @@ def main():
     # Generate predictions
     model.eval()
     y_pred = []
+    diffs = []
+    actuals = []
     with torch.no_grad():
-        for X_batch, _ in test_data_loader:
+        for X_batch, y_batch in test_data_loader:
             X_batch = X_batch.to(DEVICE)
+            y_batch = y_batch.to(DEVICE)
             output = model(X_batch)
-            y_pred.extend(output.cpu().numpy().flatten())
+            y_pred_batch = output.cpu().numpy().flatten()
+            y_pred.extend(y_pred_batch)
 
-    # Add MASTER_KEY column to results DataFrame
-    # Concatenate X_test, y_test, and y_pred in the same DataFrame
-    X_test_y_test = pd.concat([X_test.reset_index(drop=True), y_test.reset_index(drop=True)], axis=1)
-    results = pd.concat([X_test_y_test, pd.Series(y_pred, name="y_pred")], axis=1)
+            # Store actuals, as floats
+            actuals.extend(y_batch.cpu().numpy().flatten().tolist())
 
-    # Save results to CSV
-    results.to_csv(os.path.join("models", f"{MODEL_NAME}_predictions.csv"), index=False)
+        # actuals - predictions
+        diffs = np.array(actuals) - np.array(y_pred)
 
-    # Plot predictions
-    plt.plot(X_test[MASTER_KEY], y_test, label="True Values", linestyle="-")
-    plt.plot(X_test[MASTER_KEY], y_pred, label="Predicted Values", linestyle="--")
-    plt.xlabel("X Values (Master Key)")
-    plt.ylabel("Y Values (Total Capacity)")
-    plt.title("True vs. Predicted Values")
-    plt.legend()
+    # populate validation results dictionary
+    valid_results_dict = {
+        'actuals': actuals,
+        'predictions': y_pred,
+        'diffs': diffs
+    }
+    del actuals, y_pred, diffs
+
+    valid_res = pd.DataFrame(valid_results_dict)
+    del valid_results_dict
+
+    # Make sure that all values are float type.
+    valid_res['predictions'] = valid_res['predictions'].astype(float)
+    valid_res['actuals'] = valid_res['actuals'].astype(float)
+    valid_res['diffs'] = valid_res['diffs'].astype(float)
+
+    # Get the absolute value of the differences for size of scatterplot dots
+    valid_res['abs_diffs'] = valid_res['diffs'].abs()
+
+    # Calculate min and max values across both predictions and actuals to unify axes
+    max_val = np.max([valid_res['predictions'].max(), valid_res['actuals'].max()])
+    min_val = np.min([valid_res['predictions'].min(), valid_res['actuals'].min()])
+
+    # Plot the scatterplot
+    plt.figure(figsize=(8, 8))
+    sns.scatterplot(data=valid_res, x='predictions', y='actuals', size='abs_diffs', hue='diffs',
+                    palette='coolwarm', legend='brief', sizes=(20, 200))
+
+    # Add a 45 degree line
+    plt.plot([min_val, max_val], [min_val, max_val], 'm--')
+
+    # Set the axes limits
+    plt.xlim(min_val, max_val)
+    plt.ylim(min_val, max_val)
+
+    # Add labels
+    plt.xlabel('Predictions')
+    plt.ylabel('Actuals')
+
+    plt.title('Actuals vs Predictions')
+    plt.grid(True)
+
     plt.show()
+
+    # read original csv file =filename
+    original_df = pd.read_csv(filename, index_col=0)
+
+    # index of valid res = index=original_df.index
+    valid_res = valid_res.set_index(original_df.index)
+
+    # concatenate the valid_res dataframe with the original dataframe
+    merged_df = pd.concat([original_df, valid_res], axis=1)
+    del original_df, valid_res
+
+    # save the merged dataframe -> split the .csv from filename and add _predictions.csv
+    merged_df.to_csv(filename.split('.')[0] + '_predictions.csv')
 
 if __name__ == '__main__':
     main()
