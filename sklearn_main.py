@@ -70,8 +70,8 @@ def main():
         'regressor': [RandomForestRegressor(random_state=RANDOM_STATE)],
         'regressor__n_estimators': [50, 100, 500, 1000],
         'regressor__max_depth': [1, 5, 10, 20, None],
-        'regressor__max_features': [1.0, 1, 5, 10, 20, 40],
-        'regressor__max_leaf_nodes': [2, 9, 20, 50, None],
+        'regressor__max_features': [1.0, 1],
+        'regressor__max_leaf_nodes': [2, 9]
         # 'regressor__criterion': ['squared_error'], # "squared_error”, “absolute_error”
     }
 
@@ -81,20 +81,20 @@ def main():
         'regressor__max_depth': [1, 5, 10, 20, None],
         'regressor__booster': ['gbtree'],
         'regressor__gamma': [0, 0.1, 0.5, 1],
-        'regressor__reg_alpha': [0, 0.1, 0.5, 1],
-        'regressor__reg_lambda': [0, 0.1, 0.5, 1],
-        'regressor__learning_rate': [0.01, 0.05, 0.1],
+        'regressor__reg_alpha': [0, 0.1],
+        'regressor__reg_lambda': [0, 0.1],
+        'regressor__learning_rate': [0.01],
         # 'regressor__objective': ['reg:squarederror'], # reg:absoluteerror or reg:squarederror or reg:pseudohubererror
     }
 
     params_LGBM = {
         'regressor': [LGBMRegressor(random_state=RANDOM_STATE)],
         'regressor__n_estimators': [50, 100, 250, 1000],
-        'regressor__max_depth': [-1, 1, 5, 10, 20, None],
+        'regressor__max_depth': [-1, 1, 5],
         'regressor__boosting_type': ['gbdt'],
         'regressor__learning_rate': [0.01, 0.05, 0.1],
-        'regressor__num_leaves': [2, 5, 10, 25, 100],
-        'regressor__reg_alpha': [0, 0.1, 0.5, 1],
+        'regressor__num_leaves': [2, 5, 10],
+        'regressor__reg_alpha': [0, 0.1],
         'regressor__reg_lambda': [0, 0.1, 0.5, 1],
         # 'regressor__objective': ['huber'], # regression_l1 or regression_l2
     }
