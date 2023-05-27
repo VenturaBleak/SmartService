@@ -175,6 +175,7 @@ def main():
 
     # drop rows where "PC6" == 1059CM or 1018VN (outliers in target variable)
     outlier_PC6 = ["1059CM", "1018VN"]
+    print(f"column names: {original_df.columns}")
     original_df = original_df[~original_df['PC6'].isin(outlier_PC6)]
 
     # index of valid res = index=original_df.index
