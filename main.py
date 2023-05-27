@@ -33,7 +33,7 @@ def main():
         NUM_WORKERS = 0
     PIN_MEMORY = True
     WARMUP_EPOCHS = int(NUM_EPOCHS * 0.05) # 5% of the total epochs
-    FULL_DS = True
+    FULL_DS = False
 
     ############################
     # set seeds
