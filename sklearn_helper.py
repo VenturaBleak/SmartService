@@ -81,23 +81,6 @@ def plot_feature_importances(clf, X_train, y_train=None,
 
         return feat_imp
 
-def plot_learning_curve(model, X_train, y_train, title, ylim=None):
-    """plot the learning curves for each best model"""
-    train_sizes, train_scores, test_scores = learning_curve(model, X_train, y_train, cv=5, scoring="neg_mean_squared_error")
-    train_scores_mean = np.sqrt(-np.mean(train_scores, axis=1))
-    test_scores_mean = np.sqrt(-np.mean(test_scores, axis=1))
-
-    plt.figure()
-    plt.plot(train_sizes, train_scores_mean, 'o-', label="Training score")
-    plt.plot(train_sizes, test_scores_mean, 'o-', label="Cross-validation score")
-    plt.xlabel("Training examples")
-    plt.ylabel("RMSE")
-    plt.title(title)
-    if ylim:
-        plt.ylim(*ylim)
-    plt.legend(loc="best")
-    plt.show()
-
 def adjusted_r2(r2, n, p):
     """Function to calculate adjusted R-squared"""
     return 1 - (1 - r2) * (n - 1) / (n - p - 1)

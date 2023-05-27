@@ -1,16 +1,5 @@
 """
-This Python script is responsible for preparing data for machine learning analysis and model training. It's primarily used within Google's Data Science pipelines.
-
-Functionality:
-The script includes importing required packages, defining the function 'prepare_data' with options for PyTorch compatibility and testing mode, specifying various parameters and columns for processing, and loading a dataset from a CSV file.
-
-The script processes the dataset by setting a specific column as the index, applying specified transformations and dropping unnecessary columns, splitting the data into training and testing sets with an option for time-series split, and assuring no data leakage between these sets.
-
-When the PyTorch mode is enabled, the script imputes missing values using KNNImputer. If the script is not in testing mode, it prints out information about the final datasets, including feature names, numbers of features and samples.
-
-Usage:
-The 'prepare_data' function can be called with two optional boolean parameters - 'pytorch' and 'testing'. By default, 'pytorch' is set to True and 'testing' is set to False. When in testing mode, the function will load a testing dataset and minimize console output. When PyTorch compatibility is enabled, the function will return imputed datasets ready for PyTorch-based machine learning models.
-
+This Python script is responsible for preparing data for machine learning analysis and model training.
 Module Dependencies:
 - pandas: Required for data handling and manipulation.
 - sklearn.model_selection: Used for splitting the dataset into training and testing sets.
@@ -27,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import KNNImputer
 from sklearn.preprocessing import MinMaxScaler, RobustScaler
 
-def prepare_data(pytorch=True, testing=False):
+def prepare_data(testing=False):
     # specify coluns and parameters
     RANDOM_STATE = 42
     FILE_NAME = "final_data_cleaned_processed"
@@ -141,21 +130,17 @@ def prepare_data(pytorch=True, testing=False):
     # impute missing values
     imputer = KNNImputer(n_neighbors=5)
 
-    if pytorch:
-        if IMPUTE:
-            # impute missing values
-            X_train = imputer.fit_transform(X_train)
-            X_test = imputer.transform(X_test)
+    if IMPUTE:
+        # impute missing values
+        X_train = imputer.fit_transform(X_train)
+        X_test = imputer.transform(X_test)
 
-            # print nubmer of imputed values
-            print("Number of imputed values in training set: ", pd.DataFrame(X_train).isna().sum().sum())
-            print("Number of imputed values in testing set: ", pd.DataFrame(X_test).isna().sum().sum())
-        if testing == True:
-            # return the data
-            return X_train, X_test, y_train, y_test, X.columns, FILE_NAME
-        else:
-            return X_train, X_test, y_train, y_test, X.columns
+        # print nubmer of imputed values
+        print("Number of imputed values in training set: ", pd.DataFrame(X_train).isna().sum().sum())
+        print("Number of imputed values in testing set: ", pd.DataFrame(X_test).isna().sum().sum())
 
+    if testing == True:
+        # return the data
+        return X_train, X_test, y_train, y_test, X.columns, FILE_NAME
     else:
-        # return the data, scaler, and imputer
-        return X_train, X_test, y_train, y_test, X.columns, imputer
+        return X_train, X_test, y_train, y_test, X.columns

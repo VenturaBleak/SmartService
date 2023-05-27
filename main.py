@@ -49,7 +49,7 @@ def main():
     ###################################################################################################################
     # fetch data
     from data_preparation import prepare_data
-    X_train, X_test, y_train, y_test, _ = prepare_data(pytorch=True)
+    X_train, X_test, y_train, y_test, _ = prepare_data()
 
     # convert y_train and y_test to numpy arrays
     y_train = y_train.to_numpy()
@@ -97,7 +97,7 @@ def main():
     # FC model
     from model import MLP
     NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 1000
+    NODES_PER_LAYER = 20
 
     model = MLP(
         input_size=INPUT_SIZE,
