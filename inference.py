@@ -15,7 +15,7 @@ def main():
     # Set the model parameters
     RANDOM_SEED = 42
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 64
+    BATCH_SIZE = 2048
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
@@ -171,7 +171,7 @@ def main():
     plt.close()
 
     # read original csv file =filename
-    original_df = pd.read_csv(filename, index_col=0)
+    original_df = pd.read_csv(filename)
 
     # drop rows where "PC6" == 1059CM or 1018VN (outliers in target variable)
     outlier_PC6 = ["1059CM", "1018VN"]
