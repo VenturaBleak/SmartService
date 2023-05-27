@@ -1,9 +1,6 @@
-import math
+import os
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_absolute_error, mean_squared_error
-from sklearn.model_selection import learning_curve
 
 def plot_feature_importances(clf, X_train, y_train=None,
                              top_n=10, figsize=(6, 6), print_table=False, title="Feature Importances", plot=True):
@@ -77,12 +74,21 @@ def plot_feature_importances(clf, X_train, y_train=None,
             plt.tight_layout()  # Adjust the layout to fit labels
             plt.show()
 
+        # add these lines just before 'if print_table:'
+        feat_imp_export = feat_imp.copy()  # create a copy to prevent modifying the original df
+        feat_imp_export.reset_index(inplace=True)  # reset index to get the feature column back
+        feat_imp_export = feat_imp_export.sort_values(by='importance', ascending=False)  # sort by importance in descending order
+
         if print_table:
             from IPython.display import display
             print("Top {} features in descending order of importance".format(top_n))
-            display(feat_imp_df)
+            display(feat_imp_export)
 
-            #@GPT: Also save dataframe as csv
+            # save df to csv, save best_models to pickle
+            cwd = os.getcwd()
+            model_folder = os.path.join(cwd, 'models')
+
+            feat_imp_export.to_csv(os.path.join(model_folder, 'skearn_feature_importances.csv'), index=False)
 
         return feat_imp
 

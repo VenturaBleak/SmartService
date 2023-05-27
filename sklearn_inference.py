@@ -51,11 +51,8 @@ if __name__ == '__main__':
     results_df['actuals'] = results_df['actuals'].astype(float)
     results_df['diffs'] = results_df['diffs'].astype(float)
 
-    # Reset the index of the original dataframe
-    original_df.reset_index(drop=True, inplace=True)
-
     # Concatenate the results dataframe with the original dataframe
-    merged_df = pd.concat([original_df, results_df], axis=1)
+    [original_df, results_df], axis=1)
 
     # Save the DataFrame to a CSV file
     merged_filename = os.path.join(model_folder, ensemble_model_filename.split('.')[0] + '_predictions.csv')

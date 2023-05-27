@@ -23,7 +23,7 @@ def main():
     # Hyperparameters
     ############################
     RANDOM_SEED = 42
-    LEARNING_RATE = 1e-4 # (0.0001)
+    LEARNING_RATE = 1e-3 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 1024
     NUM_EPOCHS = 100
@@ -33,6 +33,7 @@ def main():
         NUM_WORKERS = 0
     PIN_MEMORY = True
     WARMUP_EPOCHS = int(NUM_EPOCHS * 0.05) # 5% of the total epochs
+    # set FULL_DS to True if you want to train on the full dataset, else the train ds will be split into train and test
     FULL_DS = False
 
     ############################
