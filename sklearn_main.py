@@ -13,7 +13,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestRegressor, VotingRegressor
 from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import r2_score
-from hyperopt import hp, fmin, tpe, STATUS_OK, Trials
 
 # import from helper files
 from sklearn_helper import adjusted_r2
@@ -60,7 +59,14 @@ def main():
     # Plot feature importances
     clf = pipeline.named_steps['regressor']
     from sklearn_helper import plot_feature_importances
-    plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train, top_n=20, print_table=True)
+    # plot top 20 features
+    plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train, top_n=20,
+                             print_table=False)
+    # print all features
+    feature_importance = plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train,
+                                                  top_n=len(feature_columns), print_table=True, plot=False)
+    # save feature importance to csv
+    feature_importance.to_csv(os.path.join(model_folder, 'sklearn_feature_importance.csv'), index=False)
 
     #############################
     # Grid Search
@@ -72,31 +78,22 @@ def main():
         'regressor__max_depth': [1, 5, 10, 20, None],
         'regressor__max_features': [1.0, 1],
         'regressor__max_leaf_nodes': [2, 9]
-        # 'regressor__criterion': ['squared_error'], # "squared_error”, “absolute_error”
     }
 
     params_XGB = {
         'regressor': [XGBRegressor(random_state=RANDOM_STATE)],
         'regressor__n_estimators': [50, 100, 250, 1000],
         'regressor__max_depth': [1, 5, 10, 20, None],
+        'regressor__learning_rate': [0.01, 0.02, 0.05, 0.1],
         'regressor__booster': ['gbtree'],
-        'regressor__gamma': [0, 0.1, 0.5, 1],
-        'regressor__reg_alpha': [0, 0.1],
-        'regressor__reg_lambda': [0, 0.1],
-        'regressor__learning_rate': [0.01],
-        # 'regressor__objective': ['reg:squarederror'], # reg:absoluteerror or reg:squarederror or reg:pseudohubererror
     }
 
     params_LGBM = {
         'regressor': [LGBMRegressor(random_state=RANDOM_STATE)],
         'regressor__n_estimators': [50, 100, 250, 1000],
-        'regressor__max_depth': [-1, 1, 5],
-        'regressor__boosting_type': ['gbdt'],
+        'regressor__max_depth': [-1, 1, 5, 10, 20, None],
         'regressor__learning_rate': [0.01, 0.05, 0.1],
-        'regressor__num_leaves': [2, 5, 10],
-        'regressor__reg_alpha': [0, 0.1],
-        'regressor__reg_lambda': [0, 0.1, 0.5, 1],
-        # 'regressor__objective': ['huber'], # regression_l1 or regression_l2
+        'regressor__boosting_type': ['gbdt'],
     }
 
     # Put params into a list

@@ -106,7 +106,7 @@ def main():
     # FC model
     from model import MLP
     NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 400
+    NODES_PER_LAYER = 100
 
     model = MLP(
         input_size=INPUT_SIZE,
