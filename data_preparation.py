@@ -43,6 +43,13 @@ def prepare_data(testing=False):
 
     print(f"dataset {FILE_NAME} loaded")
 
+    # drop rows where "PC6" == 1059CM or 1018VN (outliers in target variable)
+    outlier_PC6 = ["1059CM", "1018VN"]
+    original_num_rows = len(df)
+    df = df[~df['PC6'].isin(outlier_PC6)]
+    dropped_rows = original_num_rows - len(df)
+    print(f"Remove outliers {outlier_PC6}; {dropped_rows} rows dropped.")
+
     # open pickled dictionary
     import pickle
     with open('final_data_column_lists.pickle', 'rb') as handle:

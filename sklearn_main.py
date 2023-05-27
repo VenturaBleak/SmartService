@@ -68,34 +68,34 @@ def main():
     # Define parameters for each regressor
     params_RF = {
         'regressor': [RandomForestRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 70],
-        'regressor__max_depth': [1, 3, None],
-        'regressor__max_features': [1.0, 1, 3, ],
-        'regressor__max_leaf_nodes': [2, 3, None],
+        'regressor__n_estimators': [50, 100, 500, 1000],
+        'regressor__max_depth': [1, 5, 10, 20, None],
+        'regressor__max_features': [1.0, 1, 5, 10, 20, 40],
+        'regressor__max_leaf_nodes': [2, 9, 20, 50, None],
         # 'regressor__criterion': ['squared_error'], # "squared_error”, “absolute_error”
     }
 
     params_XGB = {
         'regressor': [XGBRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100],
-        'regressor__max_depth': [1, 3],
+        'regressor__n_estimators': [50, 100, 250, 1000],
+        'regressor__max_depth': [1, 5, 10, 20, None],
         'regressor__booster': ['gbtree'],
-        'regressor__gamma': [0.1, 0.5],
-        'regressor__reg_alpha': [0.1, 0.5],
-        'regressor__reg_lambda': [0.1, 0.5],
-        'regressor__learning_rate': [0.01, 0.05],
+        'regressor__gamma': [0, 0.1, 0.5, 1],
+        'regressor__reg_alpha': [0, 0.1, 0.5, 1],
+        'regressor__reg_lambda': [0, 0.1, 0.5, 1],
+        'regressor__learning_rate': [0.01, 0.05, 0.1],
         # 'regressor__objective': ['reg:squarederror'], # reg:absoluteerror or reg:squarederror or reg:pseudohubererror
     }
 
     params_LGBM = {
         'regressor': [LGBMRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100],
-        'regressor__max_depth': [-1, 3],
+        'regressor__n_estimators': [50, 100, 250, 1000],
+        'regressor__max_depth': [-1, 1, 5, 10, 20, None],
         'regressor__boosting_type': ['gbdt'],
-        'regressor__learning_rate': [0.01, 0.05],
-        'regressor__num_leaves': [2, 5],
-        'regressor__reg_alpha': [0, 0.1],
-        'regressor__reg_lambda': [0, 0.1],
+        'regressor__learning_rate': [0.01, 0.05, 0.1],
+        'regressor__num_leaves': [2, 5, 10, 25, 100],
+        'regressor__reg_alpha': [0, 0.1, 0.5, 1],
+        'regressor__reg_lambda': [0, 0.1, 0.5, 1],
         # 'regressor__objective': ['huber'], # regression_l1 or regression_l2
     }
 
@@ -270,7 +270,7 @@ def main():
 
     # Save the Ensemble model to a pickle file
     print("\nSaving the Ensemble model to a pickle file...")
-    ensemble_model_filename = os.path.join(model_folder, 'ensemble_model.pickle')
+    ensemble_model_filename = os.path.join(model_folder, 'sklearn_ensemble_model.pickle')
     with open(ensemble_model_filename, 'wb') as f:
         pickle.dump(ensemble, f)
     print(f"Ensemble model saved as {ensemble_model_filename}")

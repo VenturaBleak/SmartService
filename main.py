@@ -33,6 +33,7 @@ def main():
         NUM_WORKERS = 0
     PIN_MEMORY = True
     WARMUP_EPOCHS = int(NUM_EPOCHS * 0.05) # 5% of the total epochs
+    FULL_DS = True
 
     ############################
     # set seeds
@@ -50,6 +51,14 @@ def main():
     # fetch data
     from data_preparation import prepare_data
     X_train, X_test, y_train, y_test, _ = prepare_data()
+
+    if FULL_DS == True:
+        # concatenate X_train and X_test
+        X_train = np.concatenate([X_train, X_test])
+        y_train = pd.concat([y_train, y_test])
+
+        # fetch data
+        X_test, _, y_test, _, _, _ = prepare_data(testing=True)
 
     # convert y_train and y_test to numpy arrays
     y_train = y_train.to_numpy()
@@ -71,7 +80,7 @@ def main():
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=BATCH_SIZE,
-        shuffle=False,
+        shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         drop_last=False
@@ -97,7 +106,7 @@ def main():
     # FC model
     from model import MLP
     NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 20
+    NODES_PER_LAYER = 400
 
     model = MLP(
         input_size=INPUT_SIZE,
