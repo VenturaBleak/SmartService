@@ -25,7 +25,7 @@ def main():
     RANDOM_SEED = 42
     LEARNING_RATE = 1e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 64
+    BATCH_SIZE = 512
     NUM_EPOCHS = 400
     if DEVICE == "cuda":
         NUM_WORKERS = 2
@@ -224,7 +224,8 @@ def main():
         if epoch % 5 == 0:
             # print training loss and test metrics:
             print(
-                f"Epoch: {epoch}, Train Loss: {format(train_loss, ',.2f')}, Test Loss:{format(test_loss, ',.2f')}, Test RMSE: {format(rmse, ',.2f')}, LR: {optimizer.param_groups[0]['lr']:.6f}")
+                f"Epoch: {epoch}, Train Loss: {format(train_loss, ',.2f')}, Test Loss:{format(test_loss, ',.2f')}, "
+                f"Test RMSE: {format(rmse, ',.2f')}, Test MAE: {format(mae, ',.2f')}, LR: {optimizer.param_groups[0]['lr']:.6f}")
 
             # Save metrics DataFrame to a CSV file
             cwd = os.getcwd()

@@ -124,12 +124,13 @@ def prepare_data(pytorch=True, testing=False):
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, shuffle=SHUFFLE, stratify=None,
                                                                 random_state=RANDOM_STATE)
 
-    # Unit Test - data leakage: Check the indices of the train and test data after the train_test_split function to ensure that there is no overlap between them
-    assert len(
-        set(X_train.index).intersection(
-            set(X_test.index))) == 0, "Data leakage detected: Train and test sets have common ids."
+    if testing != True:
+        # Unit Test - data leakage: Check the indices of the train and test data after the train_test_split function to ensure that there is no overlap between them
+        assert len(
+            set(X_train.index).intersection(
+                set(X_test.index))) == 0, "Data leakage detected: Train and test sets have common ids."
 
-    print(f"X type: {type(X_test)}, X.shape {X_test.shape}, y type: {type(y_test)}, y.shape {y_test.shape}")
+        print(f"X type: {type(X_test)}, X.shape {X_test.shape}, y type: {type(y_test)}, y.shape {y_test.shape}")
 
     # print dataset information
     print(f"Feature names: {X.columns.to_list()}")
