@@ -1,3 +1,17 @@
+"""
+This script should be used as the main entry point for training the model and should be run after the data has been properly prepared and the model and training modules have been correctly set up.
+
+The script follows these steps:
+1. Sets up a list of hyperparameters for the model, such as learning rate, device, batch size, and number of epochs. These hyperparameters can be adjusted depending on the specific use-case.
+2. Initializes the random seed for reproducibility across multiple runs.
+3. Retrieves the training and testing datasets using the custom prepare_data function, and creates PyTorch DataLoader objects for them using the CustomDataset class.
+4. Creates a model instance.
+5. Initializes a loss function, optimizer, and learning rate scheduler. The default loss function is SmoothL1Loss (Huber Loss), which is robust to outliers. The optimizer is AdamW, which includes weight decay. The learning rate scheduler is Polynomial Decay, and Gradual Warmup Scheduler.
+6. Print a summary of the model using the torchinfo package.
+7. train_fn and eval_fn functions from the training module to train the model and evaluate it on the testing dataset. The training process is logged with a progress bar that displays the training loss for each epoch. It also logs the testing loss, Root Mean Square Error (RMSE), and Mean Absolute Error (MAE) every 5 epochs.
+8. If the testing loss in the current epoch is lower than in all previous epochs, the script saves the model's state, including the model parameters and optimizer state, to a file.
+"""
+
 import torch
 import pandas as pd
 import os
@@ -9,10 +23,10 @@ def main():
     # Hyperparameters
     ############################
     RANDOM_SEED = 42
-    LEARNING_RATE = 5e-5 # (0.0001)
+    LEARNING_RATE = 1e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 1024
-    NUM_EPOCHS = 100
+    BATCH_SIZE = 64
+    NUM_EPOCHS = 400
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
@@ -60,7 +74,7 @@ def main():
         shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
-        drop_last=True
+        drop_last=False
     )
 
     # create testing data loader
@@ -83,7 +97,7 @@ def main():
     # FC model
     from model import MLP
     NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 300
+    NODES_PER_LAYER = 1000
 
     model = MLP(
         input_size=INPUT_SIZE,
@@ -124,7 +138,14 @@ def main():
 
     # loss function -> RMSE
     from torch import nn
-    loss_fn = nn.MSELoss(reduction='mean')
+    # loss_fn = nn.MSELoss(reduction='mean')
+    # loss_fn = nn.L1Loss(reduction='mean')
+
+    # SmoothL1Loss (or Huber loss):
+    # If the abs difference between the target and the input is small (less than 1), it calculates a half MSE.
+    # If the abs difference between the target and the input is large (greater than or equal to 1), it calculates an MAE
+    # advantage: -> this loss is more robust to outliers
+    loss_fn = nn.SmoothL1Loss(reduction='mean')
 
     # optimizer -> Adam
     from torch import optim

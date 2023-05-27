@@ -1,3 +1,24 @@
+"""
+This script serves as a utility for preparing time series data for machine learning models. It follows a sliding window approach to form observation and forecast sets from past and future values respectively.
+
+The `create_sliding_window` function creates windows from the time series data. The `prepare_time_series_data` function handles the overall preparation process, which involves sorting, grouping, and windowing the data.
+
+The core parameters for this script include:
+    - LOCATION_COLUMN: Column to group the data by.
+    - TIME_COLUMN: Time-based column for sorting.
+    - TARGET_COLUMNS: Columns for the target variable.
+    - OBSERVATION_PERIOD: Length of the observation window.
+    - FORECASTING_PERIOD: Length of the forecast window.
+
+The script outputs a DataFrame, where each row represents a sliding window for a specific group. This DataFrame is saved as a CSV file, facilitating the subsequent training and testing stages.
+
+A utility for splitting the prepared data into training and testing datasets is also provided, based on a specific date. This allows for easy model validation.
+
+For a trial run, the TRY variable can be set to True. In this case, a test dataset is used to provide a quick overview of the process.
+
+In summary, this script provides a comprehensive solution for preparing time series data for machine learning models, adhering to best practices and guidelines.
+"""
+
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -73,11 +94,25 @@ if __name__ == '__main__':
         print(f"dataset {filename} loaded")
 
         # Define parameters for the time series data
-        TARGET_COLUMNS = ['MaxPower', 'kWh', 'Blocked_kWh', "number_of_chargers", "WeekIndex", "CosWeekOfYear", "SinWeekOfYear", "CosMonthOfYear", "SinMonthOfYear"]
-        LOCATION_COLUMN = 'PC6'
-        TIME_COLUMN = 'Date'
+        # open pickled dictionary
+        import pickle
+        with open('final_data_column_lists.pickle', 'rb') as handle:
+            column_lists = pickle.load(handle)
+
+        print(f"column_lists: {column_lists}")
+
+        # drop descriptive columns
+        data_df = data_df.drop([col for col in data_df.columns if col in column_lists['descriptive_columns']], axis=1)
+
+        TARGET_COLUMNS = column_lists['target_columns'] + column_lists['duplicate_target_columns'] + column_lists['lagged_columns']
+        LOCATION_COLUMN = column_lists['identifier_columns'][0]
+        TIME_COLUMN = column_lists['identifier_columns'][1]
         OBSERVATION_PERIOD = 8
         FORECASTING_PERIOD = 4
+
+        print(f"TARGET_COLUMNS: {TARGET_COLUMNS}")
+        print(f"LOCATION_COLUMN: {LOCATION_COLUMN}")
+        print(f"TIME_COLUMN: {TIME_COLUMN}")
 
     # initialize pd df
     processed_data = pd.DataFrame()
@@ -88,11 +123,11 @@ if __name__ == '__main__':
     for counter, TARGET_COLUMN in enumerate(TARGET_COLUMNS):
         print(f'Processing {TARGET_COLUMN}...')
         data = data_df.copy()
+        # print(f"data: {data}")
 
         if counter +1 != len(TARGET_COLUMNS):
             # drop every column except the target column, the time column and the location column
-            data = data.drop([col for col in data.columns if col not in  [TARGET_COLUMN, TIME_COLUMN, LOCATION_COLUMN]], axis=1)
-
+            data = data.drop([col for col in data.columns if col not in [TARGET_COLUMN, TIME_COLUMN, LOCATION_COLUMN]], axis=1)
 
         if counter +1 == len(TARGET_COLUMNS):
             if TRY != True:
@@ -189,8 +224,37 @@ if __name__ == '__main__':
         print(data_df)
         print(processed_data)
 
-    print(f"saving processed data...")
+    # create an empty list to hold the column names to drop
+    cols_to_drop = []
 
+    # loop over columns in column_lists['target_columns'] and column_lists['duplicate_target_columns']
+    for list_name in ['duplicate_target_columns']:
+        for col in column_lists[list_name]:
+            # concatenate string: column name +(t+
+            col_t_plus = col + '(t+'
+            # add all columns whose names include: col_t_plus to cols_to_drop
+            cols_to_drop += [c for c in processed_data.columns if col_t_plus in c]
+
+    # loop over columns in column_lists['lagged_columns']
+    for col in column_lists['lagged_columns']:
+        col_t_plus = col + '(t-'
+        col_t0 = col + '(t-0)'
+        # add all columns whose names include: col_t_plus except if the name also includes col_t0
+        cols_to_drop += [c for c in processed_data.columns if col_t_plus in c and col_t0 not in c]
+
+    # remove duplicate column names
+    cols_to_drop = list(set(cols_to_drop))
+
+    # drop the columns
+    processed_data = processed_data.drop(columns=cols_to_drop)
+
+    # get latest date of the date column and drop all rows with date >= latest date
+    latest_date = processed_data['Date'].max()
+
+    # drop all rows with date >= latest date
+    processed_data = processed_data[processed_data['Date'] < latest_date]
+
+    print(f"saving processed data...")
 
     # save to new csv file named original name + _cleaned
     processed_data.to_csv(filename[:-4] + '_processed.csv', index=False)
@@ -199,4 +263,4 @@ if __name__ == '__main__':
     processed_data[processed_data['Date'] < '2023-01-01'].to_csv(filename[:-4] + '_processed_train.csv', index=False)
     processed_data[processed_data['Date'] >= '2023-01-01'].to_csv(filename[:-4] + '_processed_test.csv', index=False)
 
-    print(f"Success! processed data saved to {filename.split('.')[0] + '_processed.csv'}")
+    print(f"Success! Processed data saved to {filename.split('.')[0] + '_processed.csv'}")
