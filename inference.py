@@ -173,6 +173,10 @@ def main():
     # read original csv file =filename
     original_df = pd.read_csv(filename, index_col=0)
 
+    # drop rows where "PC6" == 1059CM or 1018VN (outliers in target variable)
+    outlier_PC6 = ["1059CM", "1018VN"]
+    original_df = original_df[~original_df['PC6'].isin(outlier_PC6)]
+
     # index of valid res = index=original_df.index
     valid_res = valid_res.set_index(original_df.index)
 

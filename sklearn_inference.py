@@ -36,6 +36,10 @@ if __name__ == '__main__':
     # Load the original test data
     original_df = pd.read_csv(filename)
 
+    # drop rows where "PC6" == 1059CM or 1018VN (outliers in target variable)
+    outlier_PC6 = ["1059CM", "1018VN"]
+    original_df = original_df[~original_df['PC6'].isin(outlier_PC6)]
+
     # Prepare the prediction results
     results_dict = {
         'actuals': y_test,
