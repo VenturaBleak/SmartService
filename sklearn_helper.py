@@ -64,7 +64,6 @@ def plot_feature_importances(clf, X_train, y_train=None,
 
         feat_imp = pd.DataFrame({'importance': clf.feature_importances_})
         feat_imp['feature'] = X_train.columns
-        feat_imp['features'] = X_train.columns
         feat_imp.sort_values(by='importance', ascending=False, inplace=True)
         feat_imp = feat_imp.iloc[:top_n]
 
@@ -80,9 +79,10 @@ def plot_feature_importances(clf, X_train, y_train=None,
 
         if print_table:
             from IPython.display import display
-            # put columns in this order: feature, feature importance value
             print("Top {} features in descending order of importance".format(top_n))
-            display(feat_imp.sort_values(by='importance', ascending=False))
+            display(feat_imp_df)
+
+            #@GPT: Also save dataframe as csv
 
         return feat_imp
 

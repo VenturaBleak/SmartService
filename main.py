@@ -25,7 +25,7 @@ def main():
     RANDOM_SEED = 42
     LEARNING_RATE = 1e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-    BATCH_SIZE = 32
+    BATCH_SIZE = 1024
     NUM_EPOCHS = 100
     if DEVICE == "cuda":
         NUM_WORKERS = 2
