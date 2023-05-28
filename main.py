@@ -25,7 +25,7 @@ def main():
     # Hyperparameters
     ############################
     RANDOM_SEED = 42
-    LEARNING_RATE = 1e-4 # (0.0001)
+    LEARNING_RATE = 5e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 2048
     NUM_EPOCHS = 200
@@ -83,7 +83,7 @@ def main():
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=BATCH_SIZE,
-        shuffle=True,
+        shuffle=False,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         drop_last=False
