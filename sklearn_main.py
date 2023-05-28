@@ -1,27 +1,32 @@
+# import libraries
 import math
-import matplotlib.pyplot as plt
 import time
-import pandas as pd
 import os
 import pickle
+from tqdm import tqdm
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV,RepeatedKFold, ParameterGrid
+from sklearn.ensemble import RandomForestRegressor, VotingRegressor
+from sklearn.model_selection import ParameterGrid
 from sklearn.metrics import r2_score
+
+# import from helper files
 from sklearn_helper import adjusted_r2
 
 def main():
     RANDOM_STATE = 42
-    FULL_GRID_SEARCH = False
-    RANDOM_FRACTION = 0.001
-    N_SPLITS = 3
-    N_REPEATS = 2
+
+    # save df to csv, save best_models to pickle
+    cwd = os.getcwd()
+    model_folder = os.path.join(cwd, 'models')
 
     # fetch data
     from data_preparation import prepare_data
-    X_train, X_test, y_train, y_test, feature_columns, scaler, imputer = prepare_data(pytorch=False)
+    X_train, X_test, y_train, y_test, feature_columns = prepare_data()
 
     #########################################
     # Feature Importance
@@ -30,13 +35,11 @@ def main():
     print("Calculating feature importance...")
 
     # define regressor
-    regressor = RandomForestRegressor(n_estimators=100,
+    regressor = RandomForestRegressor(n_estimators=200,
                                       random_state=RANDOM_STATE)
 
     # specify pipeline
     pipeline = Pipeline([
-        ("scaler", scaler),
-        ("imputer", imputer),
         ("regressor", regressor)
     ])
 
@@ -56,7 +59,14 @@ def main():
     # Plot feature importances
     clf = pipeline.named_steps['regressor']
     from sklearn_helper import plot_feature_importances
-    plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train, top_n=20, print_table=True)
+    # plot top 20 features
+    plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train, top_n=20,
+                             print_table=False)
+    # print all features
+    feature_importance = plot_feature_importances(clf, pd.DataFrame(X_train, columns=feature_columns), y_train,
+                                                  top_n=len(feature_columns), print_table=True, plot=False)
+    # save feature importance to csv
+    feature_importance.to_csv(os.path.join(model_folder, 'sklearn_feature_importance.csv'), index=False)
 
     #############################
     # Grid Search
@@ -64,32 +74,23 @@ def main():
     # Define parameters for each regressor
     params_RF = {
         'regressor': [RandomForestRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 70, 100, 200, 500, 1000],
-        'regressor__max_depth': [1, 3, 5, 7, 9, 15, None],
-        'regressor__max_features': [1.0, 1, 3, 5, 7, 15, 30],
-        'regressor__max_leaf_nodes': [2, 3, 5, 9, 13, 20, 50, None],
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [10, None],
+        'regressor__max_leaf_nodes': [10, None],
     }
 
     params_XGB = {
         'regressor': [XGBRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100, 200, 400, 800],
-        'regressor__max_depth': [1, 3, 5, 7, 9, 11, 13],
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [5, 20, 50],
         'regressor__booster': ['gbtree'],
-        'regressor__gamma': [0, 0.1, 0.5, 1],
-        'regressor__reg_alpha': [0, 0.1, 0.5, 1],
-        'regressor__reg_lambda': [0, 0.1, 0.5, 1],
-        'regressor__learning_rate': [0.01, 0.05, 0.1],
     }
 
     params_LGBM = {
         'regressor': [LGBMRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100, 200, 400, 800],
-        'regressor__max_depth': [-1, 3, 9, 13, 21, 32, 50, 100],
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [-1, 5, 20],
         'regressor__boosting_type': ['gbdt'],
-        'regressor__learning_rate': [0.01, 0.05, 0.1],
-        'regressor__num_leaves': [2, 5, 9, 13, 26, 39, 50, 100],
-        'regressor__reg_alpha': [0, 0.1, 0.3, 0.5, 0.7, 1],
-        'regressor__reg_lambda': [0, 0.1, 0.3, 0.5, 0.7, 1],
     }
 
     # Put params into a list
@@ -103,74 +104,60 @@ def main():
 
     best_parameters = {}
 
+    # Create an empty dataframe to store the results
+    results_df = pd.DataFrame(columns=['model', 'train_rmse', 'test_rmse', 'test_mae', 'r2_train', 'r2_test',
+                                       'adj_r2_train', 'adj_r2_test', 'parameters'])
+
     # Loop over every regressor in the list
     for params in params_list:
         start_time = time.time()
 
         # Create a grid of parameters
         grid = ParameterGrid(params)
-        n_iterations = int(len(grid) * RANDOM_FRACTION)
-        print(f"{params['regressor'][0].__class__.__name__}, "
-              f"Possible parameter combinations: {len(grid)}, "
-              f"Search iterations: {n_iterations}")
 
-        # Perform grid search or random search
-        cv_method = RepeatedKFold(n_splits=N_SPLITS, n_repeats=N_REPEATS)
-        scoring_metric = "neg_mean_squared_error"
-        n_jobs = 4
+        best_score = float('inf')
+        best_params = None
+        best_model = None
 
-        # Removed TqdmRandomizedSearchCV and TqdmGridSearchCV
-        if FULL_GRID_SEARCH == False:
-            search = RandomizedSearchCV(pipeline, params, cv=cv_method, n_jobs=n_jobs, scoring=scoring_metric,
-                                        verbose=0, n_iter=n_iterations, random_state=RANDOM_STATE)
-        else:
-            search = GridSearchCV(pipeline, params, cv=cv_method, n_jobs=n_jobs, scoring=scoring_metric, verbose=0)
+        for param_set in tqdm(grid):
+            pipeline.set_params(**param_set)
+            pipeline.fit(X_train, y_train)
 
-        search.fit(X_train, y_train)
+            # Predict on test set and compute error
+            y_test_pred = pipeline.predict(X_test)
+            score = mean_squared_error(y_test, y_test_pred)
+
+            # If this is a better score, store these parameters
+            if score < best_score:
+                best_score = score
+                best_params = param_set
+                best_model = pipeline
 
         # Calculate the time taken to perform the search
         elapsed_time = time.time() - start_time
 
         # make predictions
-        best_model = search.best_estimator_
         y_train_pred = best_model.predict(X_train)
         y_test_pred = best_model.predict(X_test)
 
         # Store the best models
-        best_models[search.best_estimator_.named_steps['regressor'].__class__.__name__] = search.best_estimator_
+        best_models[best_model.named_steps['regressor'].__class__.__name__] = best_model
 
-        # Save model parameters to a dict, except for the last model parameter in the search.best_params_ dict
-        best_parameters[search.best_estimator_.named_steps['regressor'].__class__.__name__] = \
-            {k: v for i, (k, v) in enumerate(search.best_params_.items()) if i < len(search.best_params_) - 1}
+        # Save model parameters to a dict
+        best_parameters[best_model.named_steps['regressor'].__class__.__name__] = best_params
 
-        # print model performance
-        print(f"Best model performance: "
-              f"Train RMSE: {math.sqrt(mean_squared_error(y_train, y_train_pred)):.4f}, "
-              f"Test RSME: {math.sqrt(mean_squared_error(y_test, y_test_pred)):.4f}, "
-              f"Elapsed time: {elapsed_time:.2f} seconds")
-        print(f"Best model parameters: {best_parameters[search.best_estimator_.named_steps['regressor'].__class__.__name__]}")
-        print("-------------------------------------------")
-
-    # create a dataframe to store the results
-    results_df = pd.DataFrame(columns=['model', 'train_rmse', 'test_rmse', 'test_mae', 'r2_train', 'r2_test',
-                                       'adj_r2_train', 'adj_r2_test','parameters'])
-
-    # Compare the performance of all models and store results in the dataframe
-    for model_name, model in best_models.items():
-        y_train_pred = model.predict(X_train)
-        y_pred = model.predict(X_test)
-
+        # Compute additional metrics
         train_rmse = math.sqrt(mean_squared_error(y_train, y_train_pred))
-        test_rmse = math.sqrt(mean_squared_error(y_test, y_pred))
-        test_mae = mean_absolute_error(y_test, y_pred)
+        test_rmse = math.sqrt(mean_squared_error(y_test, y_test_pred))
+        test_mae = mean_absolute_error(y_test, y_test_pred)
 
-        # Additional evaluation metrics: R-squared and Adjusted R-squared
         r2_train = r2_score(y_train, y_train_pred)
-        r2_test = r2_score(y_test, y_pred)
+        r2_test = r2_score(y_test, y_test_pred)
         adj_r2_train = adjusted_r2(r2_train, X_train.shape[0], X_train.shape[1])
         adj_r2_test = adjusted_r2(r2_test, X_test.shape[0], X_test.shape[1])
 
-        new_row = {'model': model_name,
+        # Add a new row to the results dataframe
+        new_row = {'model': best_model.named_steps['regressor'].__class__.__name__,
                    'train_rmse': train_rmse,
                    'test_rmse': test_rmse,
                    'test_mae': test_mae,
@@ -178,39 +165,109 @@ def main():
                    'r2_test': r2_test,
                    'adj_r2_train': adj_r2_train,
                    'adj_r2_test': adj_r2_test,
-                   'parameters': best_parameters[model_name]}
+                   'parameters': best_params}
 
-        # Use .loc[] to add a new row to the DataFrame
-        results_df.loc[len(results_df)] = new_row
+        # append the new row to the dataframe
+        results_df = pd.concat([results_df, pd.DataFrame([new_row])], ignore_index=True)
+
+        # print model performance
+        print(f"Best model performance: "
+              f"Train RMSE: {math.sqrt(mean_squared_error(y_train, y_train_pred)):.4f}, "
+              f"Test RMSE: {math.sqrt(mean_squared_error(y_test, y_test_pred)):.4f}, "
+              f"Test MAE: {mean_absolute_error(y_test, y_test_pred):.4f}, "
+              f"Elapsed time: {elapsed_time:.2f} seconds")
+        print(f"Best model parameters: {best_parameters[best_model.named_steps['regressor'].__class__.__name__]}")
+        print("-------------------------------------------")
 
     # sort the dataframe by test_rmse
     results_df = results_df.sort_values(by='test_rmse')
 
-    # save df to csv, save best_models to pickle
-    cwd = os.getcwd()
-    model_folder = os.path.join(cwd, 'models')
+    # save the results to a csv file
     results_df.to_csv(os.path.join(model_folder, 'sklearn_best_models_results.csv'), index=False)
-    with open(os.path.join(model_folder, 'sklearn_best_models.pickle'), 'wb') as handle:
-        pickle.dump(best_models, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     ############################
-    # Evaluate the best models
+    # Compare the best models
     ############################
-    # plot a bar chart of the test RMSE for each model
-    plt.figure(figsize=(10, 6))  # Increase the figure size
-    plt.bar(results_df['model'], results_df['test_rmse'])
-    plt.xlabel('Models')
-    plt.ylabel('Test RMSE')
-    plt.title('Test RMSE for the Best Regressors')
-    plt.xticks(rotation=45, ha='right')  # Adjust the rotation and horizontal alignment
-    plt.tight_layout()  # Adjust the layout to fit labels
+    import matplotlib as mpl
+    # Increase the size of all text in the plot
+    mpl.rcParams['xtick.labelsize'] = 12
+    mpl.rcParams['ytick.labelsize'] = 12
+    mpl.rcParams['legend.fontsize'] = 12
+    mpl.rcParams['axes.labelsize'] = 14
+    mpl.rcParams['axes.titlesize'] = 16
+
+    # Create the main axis for RMSE
+    ax1 = plt.gca()
+    ax1.grid(False)
+
+    # Create a twin axis for MAE
+    ax2 = ax1.twinx()
+
+    # Plot RMSE values
+    rects1 = ax1.bar(results_df['model'], results_df['test_rmse'], label='Test RMSE', alpha=0.8)
+    ax1.bar_label(rects1, labels=results_df['test_rmse'].round(2), label_type='edge')
+    ax1.set_ylabel('Test RMSE')
+    ax1.set_ylim(results_df['test_rmse'].min() * 0.98, results_df['test_rmse'].max() * 1.02)
+
+    # Plot MAE values
+    rects2 = ax2.bar(results_df['model'], results_df['test_mae'], label='Test MAE', alpha=0.3)
+    ax2.bar_label(rects2, labels=results_df['test_mae'].round(2), label_type='edge')
+    ax2.set_ylabel('Test MAE')
+
+    # Set other properties
+    plt.title('Comparison of Test RMSE and Test MAE for the Best Regressors')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+
+    # Show the legend
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines + lines2, labels + labels2, loc=0)
+
+    # Show the plot
     plt.show()
 
-    # create a learning curve for each model
-    from sklearn_helper import plot_learning_curve
-    for model_name, model in best_models.items():
-        plot_learning_curve(model, X_train, y_train, title=f"Learning Curve for {model_name}")
-        print(f"Parameters for {model_name}: {best_parameters[model_name]}")
+    ############################
+    # Save the best models
+    ############################
+
+    # After the grid search loop, concatenate the training and testing sets
+    print("X_train type:", type(X_train)) # is a numpy array
+    print("X_test type:", type(X_test)) # is a numpy array
+    print("y_train type:", type(y_train)) # is a pandas series
+    print("y_test type:", type(y_test)) # is a pandas series
+
+    X = np.concatenate([X_train, X_test])
+    y = np.concatenate([y_train, y_test])
+
+    # del X_train, X_test, y_train, y_test
+    del X_train, X_test, y_train, y_test
+
+    # load inference data
+    print("\nLoading inference data...")
+    from data_preparation import prepare_data
+    X_test, _, y_test, _, _, filename = prepare_data(testing=True)
+
+    # Create an Ensemble model of best models
+    print("\nCreating an Ensemble model of best models...")
+    models_tuples = [(name, model) for name, model in best_models.items()]
+    ensemble = VotingRegressor(estimators=models_tuples)
+    ensemble.fit(X, y)
+
+    # Perform inference on the test set
+    print("\nPerforming inference on the test set...")
+    y_test_pred = ensemble.predict(X_test)
+    test_rmse = math.sqrt(mean_squared_error(y_test, y_test_pred))
+    test_mae = mean_absolute_error(y_test, y_test_pred)
+    print(f"Ensemble Model Test RMSE: {test_rmse:.4f}")
+    print(f"Ensemble Model Test MAE: {test_mae:.4f}")
+
+    # Save the Ensemble model to a pickle file
+    print("\nSaving the Ensemble model to a pickle file...")
+    ensemble_model_filename = os.path.join(model_folder, 'sklearn_ensemble_model.pickle')
+    with open(ensemble_model_filename, 'wb') as f:
+        pickle.dump(ensemble, f)
+    print(f"Ensemble model saved as {ensemble_model_filename}")
 
 if __name__ == "__main__":
     main()
