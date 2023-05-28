@@ -1,3 +1,25 @@
+"""
+Script: utils.py
+============================
+Utility functions to assist in operations related to PyTorch model training and evaluation.
+
+This script provides functions to:
+- Test tensor shapes of data for input to the model.
+- Save a PyTorch model checkpoint to disk.
+- Load a PyTorch model checkpoint from disk.
+
+Functions:
+-----------
+test_tensor_shapes(train_data_loader, test_data_loader, input_size):
+    Verifies the shape of tensors for the train and test dataloaders, ensuring the input size matches the expected size.
+
+save_checkpoint(checkpoint, model_name):
+    Saves the current state of the model to disk as a checkpoint file.
+
+load_checkpoint(model_name, model, optimizer=None):
+    Loads a PyTorch model checkpoint from disk, restoring the model and optionally the optimizer state.
+"""
+
 import os
 import torch
 

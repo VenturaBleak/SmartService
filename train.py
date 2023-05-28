@@ -1,3 +1,19 @@
+"""
+Script: train.py
+============================
+This script contains two main functions, `train_fn` and `eval_fn`, for training and evaluating PyTorch models, respectively.
+
+The `train_fn` function loops over each batch of the input data, performs the forward and backward propagation, computes the loss,
+and updates the model's parameters based on the computed gradients. The function also utilizes a learning rate scheduler
+to adjust the learning rate during the training process.
+
+The `eval_fn` function evaluates the model's performance on a given dataset, computes the loss, and returns key regression metrics,
+including mean squared error (MSE), root mean squared error (RMSE), and mean absolute error (MAE). During evaluation, the model is set to
+evaluation mode, and gradients are not computed to speed up the computations.
+
+Both functions are designed to run on either CPU or GPU, depending on the specified device.
+"""
+
 import torch
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import numpy as np

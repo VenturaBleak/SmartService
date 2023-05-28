@@ -1,13 +1,36 @@
 """
-This Python script is responsible for preparing data for machine learning analysis and model training.
-Module Dependencies:
-- pandas: Required for data handling and manipulation.
-- sklearn.model_selection: Used for splitting the dataset into training and testing sets.
-- sklearn.impute: Contains the KNNImputer class for handling missing data.
-- sklearn.preprocessing: Includes Scaler classes for data normalization.
-- pickle: Used for loading a pickled dictionary that contains lists of columns to process in the dataset.
+Script: data_preparation.py
+========================
+Purpose:
+This script is designed to clean, preprocess, and split the data for forecasting models.
+In specific, the script loads the data, removes outliers, imputes missing values, and splits the data.
+The function returns the training/testing input features (X), the corresponding targets (y),
+the column names of the features, and the filename of the used dataset.
 
-Note: To execute this script correctly, ensure the required CSV files and a 'final_data_column_lists.pickle' file are available in the same directory as the script.
+Description:
+It utilizes pandas for data manipulation, sklearn for data preprocessing and train-test split, and pickle
+for loading additional data. The output of this script is the training and testing datasets for the
+consumption prediction models.
+
+Usage:
+To use this script, simply call the `prepare_data(testing=False)` function.
+The 'testing' parameter, when set to False (default), prepares the training dataset.
+When set to True, the function prepares the testing dataset.
+
+Functions:
+prepare_data(testing=False):
+    - Load dataset named 'final_data_cleaned_processed_train.csv' for training data or
+    'final_data_cleaned_processed_test.csv' for testing data.
+    - Set 'PC6_WeekIndex' as the index of the dataframe.
+    - Remove outliers identified by "PC6" == 1059CM or 1018VN.
+    - Open and load a pickled dictionary named 'final_data_column_lists.pickle'.
+    - Determine the columns to keep and drop based on a defined list of forecasting columns.
+    - Drop specified columns.
+    - Split data into features and target variables.
+    - For the training dataset, split into training and testing sets. For the testing dataset,
+    define the entire data as both training and testing sets for placeholder purposes.
+    - Impute missing values using KNN imputation (only for the training dataset).
+    - Return the train/test input features, targets, the column names, and the filename.
 """
 
 

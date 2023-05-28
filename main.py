@@ -1,4 +1,6 @@
 """
+Script: main.py
+================
 This script should be used as the main entry point for training the model and should be run after the data has been properly prepared and the model and training modules have been correctly set up.
 
 The script follows these steps:

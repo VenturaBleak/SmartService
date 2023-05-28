@@ -1,3 +1,19 @@
+"""
+Script: schedulers.py
+============================
+This script provides two classes, PolynomialLRDecay and GradualWarmupScheduler, for modifying the learning rate during training.
+
+PolynomialLRDecay is a learning rate scheduler that decays the learning rate following a polynomial of degree 'power' till max_decay_steps, after which the learning rate remains constant. This allows the model to make large updates in the beginning, and smaller updates as training progresses.
+
+GradualWarmupScheduler gradually increases the learning rate from zero (or from a smaller learning rate) to the initially set learning rate (base_lr) over a specified number of epochs. This can help in avoiding large weight updates at the start of the training process, which can lead to unstable training.
+
+These schedulers can help in optimizing the training process and achieving better model performance.
+
+Usage:
+    scheduler_poly_decay = PolynomialLRDecay(optimizer, max_decay_steps)
+    scheduler_warmup = GradualWarmupScheduler(optimizer, multiplier, total_epoch, after_scheduler)
+"""
+
 # schedulers
 from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau
 
