@@ -25,10 +25,10 @@ def main():
     # Hyperparameters
     ############################
     RANDOM_SEED = 42
-    LEARNING_RATE = 5e-4 # (0.0001)
+    LEARNING_RATE = 2e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 2048
-    NUM_EPOCHS = 200
+    NUM_EPOCHS = 300
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
@@ -109,7 +109,7 @@ def main():
     # FC model
     from model import MLP
     NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 100
+    NODES_PER_LAYER = 400
 
     model = MLP(
         input_size=INPUT_SIZE,
