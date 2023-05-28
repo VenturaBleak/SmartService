@@ -35,7 +35,7 @@ def main():
     print("Calculating feature importance...")
 
     # define regressor
-    regressor = RandomForestRegressor(n_estimators=100,
+    regressor = RandomForestRegressor(n_estimators=200,
                                       random_state=RANDOM_STATE)
 
     # specify pipeline
@@ -74,25 +74,22 @@ def main():
     # Define parameters for each regressor
     params_RF = {
         'regressor': [RandomForestRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100, 500, 1000],
-        'regressor__max_depth': [1, 5, 10, 20, None],
-        'regressor__max_features': [1.0, 1],
-        'regressor__max_leaf_nodes': [2, 9]
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [10, None],
+        'regressor__max_leaf_nodes': [10, None],
     }
 
     params_XGB = {
         'regressor': [XGBRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100, 250, 1000],
-        'regressor__max_depth': [1, 5, 10, 20, None],
-        'regressor__learning_rate': [0.01, 0.02, 0.05, 0.1],
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [5, 20, 50],
         'regressor__booster': ['gbtree'],
     }
 
     params_LGBM = {
         'regressor': [LGBMRegressor(random_state=RANDOM_STATE)],
-        'regressor__n_estimators': [50, 100, 250, 1000],
-        'regressor__max_depth': [-1, 1, 5, 10, 20, None],
-        'regressor__learning_rate': [0.01, 0.05, 0.1],
+        'regressor__n_estimators': [100, 500],
+        'regressor__max_depth': [-1, 5, 20],
         'regressor__boosting_type': ['gbdt'],
     }
 

@@ -25,8 +25,8 @@ def prepare_data(testing=False):
     else:
         FILE_NAME = FILE_NAME + "_train" + ".csv"
     MASTER_KEY = "PC6_WeekIndex"
-    TARGET_COL = "Consumed_kWh"
-    # TARGET_COL = "Blocked_kWh"
+    # TARGET_COL = "Consumed_kWh"
+    TARGET_COL = "Blocked_kWh"
     FORECAST_HORIZON = 4
     IMPUTE = True
     SHUFFLE = False

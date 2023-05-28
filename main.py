@@ -26,7 +26,7 @@ def main():
     LEARNING_RATE = 1e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 2048
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 200
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
