@@ -83,7 +83,7 @@ def main():
     train_data_loader = DataLoader(
         dataset=train_dataset,
         batch_size=BATCH_SIZE,
-        shuffle=False,
+        shuffle=True,
         num_workers=NUM_WORKERS,
         pin_memory=PIN_MEMORY,
         drop_last=False
