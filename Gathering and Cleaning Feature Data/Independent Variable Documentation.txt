@@ -1,0 +1,8 @@
+Independent Variable Gathering and Processing
+
+Description:
+The Python script provided processes data related to electric and hybrid vehicles, charging locations, energy supply, demographics, public transport, buses, and P+R parking in Amsterdam. It performs tasks such as extracting and organizing vehicle data, filtering and selecting specific years, cleaning and aggregating charging location information, calculating energy supply per postcode, analyzing demographic data by age and population, and summarizing public transport, bus parking, and P+R parking statistics. The script aims to transform raw data into a structured format for further analysis or visualization.
+
+Usage:
+1. Ensure all the required data files are available in the specified file paths.
+2. Modify the file paths in the script to match the actual paths in your local environment.
