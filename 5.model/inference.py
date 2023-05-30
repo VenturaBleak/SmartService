@@ -54,7 +54,7 @@ def main():
     #### Specify Training, and Test Datasets
     ###################################################################################################################
     # fetch data
-    from data_preparation import prepare_data
+    from data_feeding import prepare_data
     X_test, _, y_test, _, _, filename = prepare_data(testing=True)
 
     # convert y_train and y_test to numpy arrays

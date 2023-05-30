@@ -1,5 +1,5 @@
 """
-Script: data_preparation.py
+Script: data_feeding.py
 ========================
 Purpose:
 This script is designed to clean, preprocess, and split the data for forecasting models.
@@ -50,7 +50,7 @@ def prepare_data(testing=False):
     MASTER_KEY = "PC6_WeekIndex"
     # TARGET_COL = "Consumed_kWh"
     TARGET_COL = "Blocked_kWh"
-    FORECAST_HORIZON = 4
+    FORECAST_HORIZON = 1
     IMPUTE = True
     SHUFFLE = False
     TIME_WISE_SPLIT = True

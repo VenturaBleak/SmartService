@@ -50,7 +50,7 @@ def main():
     model_folder = os.path.join(cwd, 'models')
 
     # fetch data
-    from data_preparation import prepare_data
+    from data_feeding import prepare_data
     X_train, X_test, y_train, y_test, feature_columns = prepare_data()
 
     #########################################
@@ -270,7 +270,7 @@ def main():
 
     # load inference data
     print("\nLoading inference data...")
-    from data_preparation import prepare_data
+    from data_feeding import prepare_data
     X_test, _, y_test, _, _, filename = prepare_data(testing=True)
 
     # Create an Ensemble model of best models
