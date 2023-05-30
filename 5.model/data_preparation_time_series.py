@@ -21,6 +21,7 @@ For a trial run, the TRY variable can be set to True. In this case, a test datas
 In summary, this script provides a comprehensive solution for preparing time series data for machine learning models, adhering to best practices and guidelines.
 """
 
+import os
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -119,7 +120,7 @@ if __name__ == '__main__':
         # load csv file named processed_data.csv
         filename = 'final_data_cleaned.csv'
         print(f"loading dataset {filename}...")
-        data_df = pd.read_csv(filename)
+        data_df = pd.read_csv(filename, low_memory=False)
         print(f"dataset {filename} loaded")
 
         # Define parameters for the time series data
