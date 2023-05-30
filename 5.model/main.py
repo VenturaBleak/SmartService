@@ -163,6 +163,8 @@ def main():
     from torch import optim
     # optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-5)
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=1e-2)
+    # weight decay penalizes large paramter weights by adding a penalty term to the loss function. This penalty term is proportional to the size of the weights in the network.
+    # difference between SGD Adam and AdamW:
 
     # scheduler -> cosine annealing with warm restarts
     from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
