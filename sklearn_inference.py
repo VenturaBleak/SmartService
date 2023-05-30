@@ -20,7 +20,10 @@ Steps:
 import os
 import pickle
 import math
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+import pandas as pd
+import numpy as np
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn_helper import adjusted_r2
 
 if __name__ == '__main__':
     ############################
@@ -49,8 +52,24 @@ if __name__ == '__main__':
     print(f"Ensemble Model Test RMSE: {test_rmse:.4f}")
     print(f"Ensemble Model Test MAE: {test_mae:.4f}")
 
-    import pandas as pd
-    import numpy as np
+    # New metric calculations, placed after the existing ones
+    r2_test = r2_score(y_test, y_test_pred)
+    adj_r2_test = adjusted_r2(r2_test, X_test.shape[0], X_test.shape[1])
+
+    # DataFrame for result storage
+    # This replaces the existing 'results_dict' definition
+    results_df = pd.DataFrame({
+        'model': ['ensemble_model'],
+        'test_rmse': [test_rmse],
+        'test_mae': [test_mae],
+        'r2_test': [r2_test],
+        'adj_r2_test': [adj_r2_test]
+    })
+
+    # Save DataFrame to CSV, placed at the end of the script before saving original_df
+    results_df.to_csv(os.path.join(model_folder, ensemble_model_filename.split('.')[0] + '_inference_results.csv'),
+                      index=False)
+    print(f"Saved inference results in {filename}")
 
     # Load the original test data
     original_df = pd.read_csv(filename)
