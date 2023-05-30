@@ -1,5 +1,5 @@
 """
-Script: data_preparation.py
+Script: data_feeding.py
 ========================
 Purpose:
 This script is designed to clean, preprocess, and split the data for forecasting models.

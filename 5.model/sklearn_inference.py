@@ -35,7 +35,7 @@ if __name__ == '__main__':
     model_folder = os.path.join(cwd, 'models')
     ensemble_model_filename = os.path.join(model_folder, 'sklearn_ensemble_model.pickle')
 
-    from data_preparation import prepare_data
+    from data_feeding import prepare_data
 
     X_test, _, y_test, _, _, filename = prepare_data(testing=True)
 

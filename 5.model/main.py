@@ -52,7 +52,7 @@ def main():
     #### Specify Training, and Test Datasets
     ###################################################################################################################
     # fetch data
-    from data_preparation import prepare_data
+    from data_feeding import prepare_data
     X_train, X_test, y_train, y_test, _ = prepare_data()
 
     if FULL_DS == True:
