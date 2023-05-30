@@ -32,7 +32,7 @@ This document follows the steps we took when approaching our solution, beginning
 
 ## Model <a name="model"></a>
 
-`5.model_data` - Contains various scripts for preparing and running different models.
+`5.model` - Contains various scripts for preparing and running different models.
 
 ---
 
