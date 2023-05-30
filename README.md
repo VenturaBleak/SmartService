@@ -1,12 +1,12 @@
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Session Data Cleaning](#session-data-cleaning)
-3. [Feature Gathering and Cleaning](#feature-gathering-and-cleaning)
-4. [Outlier Detection](#outlier-detection)
-5. [Final Data Preparation](#final-data-preparation)
-6. [Model Data](#model-data)
+0. [Introduction](#introduction)
+1. [Session Data Cleaning](#session-data-cleaning)
+2. [Feature Gathering and Cleaning](#feature-gathering-and-cleaning)
+3. [Outlier Detection](#outlier-detection)
+4. [Final Data Preparation](#final-data-preparation)
+5. [Model](#model)
 
 ## Introduction <a name="introduction"></a>
 
@@ -28,11 +28,12 @@ This document follows the steps we took when approaching our solution, beginning
 
 ## Final Data Preparation <a name="final-data-preparation"></a>
 
-`4.final_data_preparation` - This folder contains scripts that are used to finalize the dataset before model training, including tasks such as scaling and normalization.
+`4.final_data_preparation` - This folder contains scripts that are used to merge all existing data and handle missing values/outliers.
 
-## Model Data <a name="model-data"></a>
+## Model <a name="model"></a>
 
 `5.model_data` - Contains various scripts for preparing and running different models.
+
 ---
 
 For more information on each script, please refer to the comments within the files. Happy coding! :) 
