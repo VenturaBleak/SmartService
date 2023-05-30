@@ -1,4 +1,6 @@
 """
+Script: data_preparation_time_series.py
+========================
 This script serves as a utility for preparing time series data for machine learning models. It follows a sliding window approach to form observation and forecast sets from past and future values respectively.
 
 The `create_sliding_window` function creates windows from the time series data. The `prepare_time_series_data` function handles the overall preparation process, which involves sorting, grouping, and windowing the data.
@@ -25,6 +27,17 @@ from tqdm import tqdm
 
 # Function to create sliding windows for the time series data
 def create_sliding_window(data, observation_period, forecasting_period):
+    """
+    Creates sliding windows of given lengths for the provided time series data.
+
+    Args:
+        data (np.array): The time series data.
+        observation_period (int): The length of the observation window.
+        forecasting_period (int): The length of the forecasting window.
+
+    Returns:
+        tuple: Two numpy arrays containing the observation and forecast windows.
+    """
     observation_np, forecast_np = [], []
     # Loop over the data to create sliding windows
     for i in range(len(data) - observation_period - forecasting_period + 1):
@@ -37,6 +50,22 @@ def create_sliding_window(data, observation_period, forecasting_period):
 
 # Function to prepare the time series data
 def prepare_time_series_data(data, observation_period, forecasting_period, location_column, time_column, target_column):
+    """
+       Prepares the time series data by creating sliding windows for each group of the data.
+
+       Args:
+           data (pd.DataFrame): The DataFrame containing the data.
+           observation_period (int): The length of the observation window.
+           forecasting_period (int): The length of the forecasting window.
+           location_column (str): The name of the column containing the location data.
+           time_column (str): The name of the column containing the time data.
+           target_column (str): The name of the column containing the target data.
+
+       Returns:
+           tuple: Two numpy arrays containing the observation and forecast windows for each group,
+                  a list of the groups' keys, and a GroupBy object of the data grouped by location.
+    """
+
     # Sort the data by Location ID and Timestamp
     data = data.sort_values([location_column, time_column])
     # Group the data by Location ID

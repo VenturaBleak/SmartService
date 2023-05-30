@@ -1,3 +1,21 @@
+"""
+Script: sklearn_helper.py
+============================
+Performs inference on test data using a trained sklearn ensemble model.
+
+This script reads the sklearn ensemble model from a pickle file, performs inference on the test set, and saves the
+prediction results to a csv file.
+
+Steps:
+    Load the ensemble model from a pickle file.
+    Perform inference on the test set.
+    Calculate metrics (RMSE and MAE) for the model's performance on the test set.
+    Load the original test data.
+    Prepare the prediction results, including actuals, predictions, and the differences between them.
+    Merge these results with the original test data.
+    Save the merged data to a csv file.
+"""
+
 import os
 import matplotlib.pyplot as plt
 import pandas as pd

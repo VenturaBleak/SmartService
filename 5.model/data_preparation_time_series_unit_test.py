@@ -1,3 +1,21 @@
+"""
+Script: data_preparation_time_series_unit_test.py
+========================
+
+This script serves to test the data processing steps implemented in `data_preparation_time_series.py`.
+The script employs Python's unittest module to ensure the consistency and correctness of transformations applied to the original data. The primary functionalities include:
+
+1. Loading both the original and processed datasets.
+2. Checking the number of unique values in the "PC6_WeekIndex" column in both datasets.
+3. Sampling 5000 random observations from the processed data.
+4. Filtering the original data to match the "PC6_WeekIndex" in the processed data.
+5. Sorting both datasets by "PC6" + "Date".
+6. Iterating over all rows in the processed data, fetch the corresponding row from the original data and ensure that the target column value matches.
+
+Requirements:
+- The original and processed datasets must be CSV files and must exist in the same directory as the script.
+"""
+
 import unittest
 import pandas as pd
 from tqdm import tqdm

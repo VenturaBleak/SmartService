@@ -1,3 +1,19 @@
+"""
+Script: inference.py
+========================
+
+Purpose:
+The main purpose of this script is to perform inference on test data using a trained pytorch deep learning model and evaluate its performance. The script is designed to load the model, evaluate it on a test dataset, and save its predictions. Additionally, it visualizes the results and produces a scatterplot comparing the model's predictions to the actual values.
+
+Functionality:
+    Parameter Setup: The script sets up necessary parameters including device information, random seeds, batch size, etc.
+    Data Preparation: The script loads the test data and prepares it for inference.
+    Model Loading: It loads the trained MLP model from a saved state.
+    Evaluation: It evaluates the model performance on test data using Mean Squared Error (MSE), Root Mean Squared Error (RMSE), and Mean Absolute Error (MAE) as evaluation metrics. The results are printed and saved to a CSV file.
+    Prediction and Visualization: The script makes predictions on the test dataset and produces a scatterplot to compare the predicted and actual values. This plot is saved as a PNG image.
+    Merging and Saving Predictions: The model's predictions, along with the differences between predictions and actual values, are merged with the original data. This merged data is saved to a CSV file for further analysis.
+"""
+
 import torch
 import os
 import random

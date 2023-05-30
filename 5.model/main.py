@@ -1,4 +1,6 @@
 """
+Script: main.py
+================
 This script should be used as the main entry point for training the model and should be run after the data has been properly prepared and the model and training modules have been correctly set up.
 
 The script follows these steps:
@@ -23,10 +25,10 @@ def main():
     # Hyperparameters
     ############################
     RANDOM_SEED = 42
-    LEARNING_RATE = 1e-4 # (0.0001)
+    LEARNING_RATE = 2e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 2048
-    NUM_EPOCHS = 200
+    NUM_EPOCHS = 300
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:

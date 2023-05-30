@@ -1,3 +1,28 @@
+"""
+Script: sklearn_main.py
+============================
+
+Purpose:
+This script is designed to perform data preparation, feature importance analysis, model training, parameter tuning,
+and model evaluation for three types of regressors: RandomForestRegressor, XGBRegressor, and LGBMRegressor.
+The goal is to create an ensemble model that combines the strengths of these regressors to provide improved
+predictive performance.
+
+Functionality:
+1. Data Preparation: The script imports data and prepares it for modeling.
+2. Feature Importance: It calculates and displays feature importances.
+3. Grid Search: It conducts a grid search for hyperparameter tuning for the three regressors.
+4. Model Evaluation: It evaluates model performance using several metrics including Root Mean Square Error (RMSE),
+   Mean Absolute Error (MAE), R-squared (r2) and Adjusted R-squared.
+5. Model Comparison: It provides a comparison of the performance of the different regressors.
+6. Model Saving: It saves the ensemble model to a pickle file for future use.
+
+Usage:
+The script is standalone and can be run using Python 3.x with the required libraries installed. The script expects the data
+to be prepared in a specific format by the `data_preparation` module.
+"""
+
+
 # import libraries
 import math
 import time

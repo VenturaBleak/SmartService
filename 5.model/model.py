@@ -1,3 +1,21 @@
+"""
+Script: model.py
+============================
+This script contains three different variations of multi-layer perceptron (MLP) models for use in machine learning tasks:
+
+1. MLP: A standard fully-connected neural network model with an optional dropout layer after every two blocks except for the final block.
+    This dropout is designed to reduce overfitting.
+
+2. MLPWithBatchNorm: Similar to MLP, but includes batch normalization in each layer. This feature aims to improve the model's speed,
+    performance, and stability.
+
+3. HalfingModel: A unique model in which the number of features is halved after each block, thereby potentially reducing the complexity and
+    computational cost of the model.
+
+Each model is defined as a class that inherits from PyTorch's nn.Module. Each class contains an initialization function to set up the
+model architecture, and a forward function to perform the forward propagation through the model.
+"""
+
 from torch import nn
 
 class MLP(nn.Module):
