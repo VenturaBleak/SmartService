@@ -28,7 +28,7 @@ def main():
     LEARNING_RATE = 1e-4 # (0.0001)
     DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
     BATCH_SIZE = 2048
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 1000
     if DEVICE == "cuda":
         NUM_WORKERS = 2
     else:
@@ -108,15 +108,15 @@ def main():
     ############################
     # FC model
     from model import MLP
-    NUM_HIDDEN_LAYERS = 8
-    NODES_PER_LAYER = 100
+    NUM_HIDDEN_LAYERS = 12
+    NODES_PER_LAYER = 200
 
     model = MLP(
         input_size=INPUT_SIZE,
         output_size=OUTPUT_SIZE,
         num_hidden_layers=NUM_HIDDEN_LAYERS,
         nodes_per_layer=NODES_PER_LAYER,
-        dropout_rate=0.05
+        dropout_rate=0.1
     )
     model.to(DEVICE)
 
