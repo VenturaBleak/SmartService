@@ -120,7 +120,8 @@ if __name__ == '__main__':
         # load csv file named processed_data.csv
         filename = 'final_data_cleaned.csv'
         print(f"loading dataset {filename}...")
-        data_df = pd.read_csv(filename, low_memory=False)
+        cwd = os.getcwd()
+        data_df = pd.read_csv(os.path.join(cwd,filename), low_memory=False)
         print(f"dataset {filename} loaded")
 
         # Define parameters for the time series data
